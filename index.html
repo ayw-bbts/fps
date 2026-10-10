@@ -1,39 +1,39 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0a0a">
-<title>跟枪训练器</title>
-<style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
-  font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
-  user-select:none;-webkit-user-select:none;overscroll-behavior:none;
-  --bg:#0a0a0a;--fg:#e8e8e8;--panel:#131313;--card:#141414;--line:#1d1d1d;--dim:#666;--acc:#4fc3f7}
-body[data-theme="light"]{--bg:#f4f4f6;--fg:#1a1a1a;--panel:#fff;--card:#fff;--line:#e2e2e6;--dim:#8a8a8a;--acc:#0288d1}
-body[data-theme="purple"]{--bg:#0f0820;--fg:#ede7f6;--panel:#1a1030;--card:#1a1030;--line:#2a1f45;--dim:#8a7ab0;--acc:#b388ff}
-body{display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+<！doctype 超文本标记语言><
+< 朗="zh-CN">html lang="zh-CN">
+<头>头>
+<元 字符集="UTF-8">元charset="UTF-8">
+<元名称="视口"内容="宽度=设备宽度，初始比例=1。0，最大比例=1.0，用户可缩放=无，视口适合=覆盖">元名称=“视口”content="width=设备宽度，初始比例=1.0，最大比例=1.0，用户可缩放=无，viewport-fit=cover">
+<元 姓名="apple-mobile-web-app-capable"内容="是">元name="apple-mobile-web-app-content="yes">
+<元 姓名="主题颜色"内容="#0a0a0a">元名称="主题颜色"内容="#0 a0a0a">
+<标题>跟枪训练器</标题>标题>跟枪训练器</标题>
+<风格>风格>
+*{箱体尺寸：边框框；-webkit-tap-highlight-color：透明的}{箱体尺寸：边框框；-webkit-tap-highlight-color：透明的}
+超文本标记语言，正文{边距：0；高度：100%；溢出：隐藏；背景：var(--bg)；颜色：var(--fg)；，身体{边缘：0；高度：100%；溢出：隐藏的；背景：var(--bg)；颜色：var(--fg)；
+字体系列：system-ui，-apple-system，"平方SC"，“微软雅黑”，无衬线；字体系列：system-ui，-apple-system，"平方SC"，"Microsoft Yahei"，无衬线；
+用户选择：无；-WebKit用户选择：无；过卷行为：无；用户选择：没有一个；-webkit用户选择：没有一个；过卷行为：没有一个；
+--bg：#0a0a0a；--fg：#e8e8e8；--面板：#131313；--卡片：#1414；--行：#1d1d1d；--dim：#666；--acc：#4fc3f7}--bg：#0a0a0a；--fg：#e8e8e8；--面板:#131313;--CARD:#141414;--行：#1d1d1d；--dim：#666；--acc：#4fc3f7}
+身体[数据主题="轻"]{--bg：#f4f4f6；--fg：#1a1a1a；--面板：#FFF；--CARD：#fff；--行：#e2e2e6；--dim：#8a8a8a；--acc：#0288d1}[数据主题="轻"]{--bg：#f4f4f6；--fg：#1a1a；--面板：#FFF；--CARD：#fff；--行：#e2e2e6；--dim：#8a8a8a；--acc：#0288d1}
+身体[数据主题="紫色"]{--bg：#0f0820；--fg：#ede7f6；--面板：#1a1030；--卡片：#1a1030；--行：#2a1f45；--dim：#8a7ab0；--acc：#b388ff}[数据主题="紫色"]{--bg：#0f0820；--fg：#ede7f6；--面板：#1a1030；--CARD：#1a1030；--行：#2a1f45；--dim：#8a7ab0；--acc：#b388ff}
+主体{显示：弯曲；弯曲方向：柱；填充-顶部：env(安全区域-插入-顶部)；padding-bottom:env(安全区-插入-底部)}{显示：弯曲；挠曲方向：柱；顶部衬垫：env(安全区内置顶)；垫底：env(安全区内底)}
 
-#hud{display:flex;justify-content:space-around;align-items:center;padding:8px 10px;
-  background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0}
-.st{text-align:center;font-size:9px;color:var(--dim);letter-spacing:.5px}
-.st b{display:block;margin-top:1px;font-size:16px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums}
-.st b.g{color:#4caf50}.st b.y{color:#ffc107}.st b.r{color:#ff5252}
+#HUD{显示：flex；justify-content：环绕空格；对齐项：居中；填充：8px10px；hud{显示：弯曲；justify-content：环绕空间的；对齐项目：中心；填充：8px10px；
+背景：var(--面板)；下边框：1px实体var(--行)；弹性收缩：0}背景：var(--面板)；下边框：1PX固体var(--行)；挠曲收缩：0}
+.st{文本对齐：居中；字体大小：9px；颜色：var(--dim)；字母间距：.5PX}圣{文本对齐：中心；字体大小：9PX；颜色：var(--dim)；字母间距：.5PX}
+.圣B{显示：块；上边距：1px；字体大小：16px；font-weight:700；颜色：var(--acc)；font-variant-numeric：表编号}圣b{显示：块；上边距：1PX；字体大小：16px；字体粗细：700；颜色：var(--acc)；font-variant-numeric：表格数}
+.圣b.g{color：#4caf50}.圣b.y{color：#ffc107}.圣b.r{color：#ff5252}圣b.g{颜色：#4caf50}.圣b.y{颜色：#ffc107}.圣b.r{颜色：#ff5252}
 
-#settings{background:var(--panel);border-bottom:1px solid var(--line);max-height:0;
-  overflow:hidden;transition:max-height .3s;flex-shrink:0}
-#settings.open{max-height:85vh;overflow-y:auto}
-.set-block{padding:10px 12px;border-bottom:1px solid var(--line)}
-.set-block:last-child{border-bottom:0}
-.set-label{font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:6px}
-.chips{display:flex;gap:5px;flex-wrap:wrap}
-.chip{flex:1;min-width:54px;padding:7px 4px;border-radius:7px;border:1px solid var(--line);
-  background:transparent;color:var(--dim);font-size:11px;font-weight:600;cursor:pointer;
-  text-align:center;transition:all .12s;font-family:inherit}
-.chip.active{background:var(--acc);border-color:var(--acc);color:#06121a}
-.row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);margin-top:6px}
+#设置{背景：var(--面板)；下边框：1px实变量(--线)；最大高度：0；设置{背景：var(--面板)；下边框：1PX固体var(--行)；最大高度：0；
+溢出：隐藏；过渡：最大高度.3s；弹性收缩：0}溢出:隐藏的;过渡:最大高度 .3s;挠曲收缩:0}
+#设置.打开{最大高度：85vh；溢流-y：自动}设置.打开{最大高度：85vh；溢流y：自动}
+.set-block{填充：10px12px；下边框：1PX固体var(--行)}set-block{填充：10px12px；下边框：1PX固体var(--行)}
+.set-block：最后一个孩子{下边框：0}set-block：最后一个孩子{下边框：0}
+.set-label{字体大小：10px；颜色：var(--dim)；字母间距：1PX；驳船底部：6px}set-label{字体大小：10px；颜色：var(--dim)；字母间距：1PX；底边距：6px}
+.芯片{显示：弯曲；间隙：5px；flex-wrap：包}芯片{显示：弯曲；差距：5PX；柔性缠绕：包}
+.芯片{弯曲：1；最小宽度：54PX；填充：7px4PX；边界半径：7px；边界：1PX固体var(--行)；芯片{弯曲：1；最小宽度：54PX；填充：7px4PX；边界半径：7px；边界：1PX固体var(--行)；
+背景：透明；颜色：var(--dim)；字体大小：11px；字体粗细：600；光标：指针；背景：透明的；颜色：var(--dim)；字体大小：11px；字体粗细：600；光标：指针；
+文本对齐：居中；过渡：全部.12；字体系列：继承}文本对齐:中心;过渡:所有 .12s;字体系列:继承}
+.芯片.活跃的{背景：var(--acc)；边框颜色：var(--acc)；颜色：#06121a}芯片.活跃的{背景：var(--acc)；边框颜色：var(--acc)；颜色：#06121a}
+。行{显示：弯曲；对齐项目：居中；间距：8px；字体大小：11px；颜色：var(--dim)；页边距顶部：6px}行{显示：弯曲；对齐项目：中心；差距：8px；字体大小：11px；颜色：var(--dim)；上边距：6px}
 .row b{color:var(--acc);font-size:12px;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
 input[type=range]{flex:1;accent-color:var(--acc);height:20px;touch-action:auto}
 input[type=color]{width:32px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:transparent;cursor:pointer}
