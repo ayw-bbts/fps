@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
+<title>跟枪训练器</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
+  font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  user-select:none;-webkit-user-select:none;overscroll-behavior:none;
+  --bg:#0a0a0a;--fg:#e8e8e8;--panel:#131313;--card:#141414;--line:#1d1d1d;--dim:#666;--acc:#4fc3f7}
+body[data-theme="light"]{--bg:#f4f4f6;--fg:#1a1a1a;--panel:#fff;--card:#fff;--line:#e2e2e6;--dim:#8a8a8a;--acc:#0288d1}
+body[data-theme="purple"]{--bg:#0f0820;--fg:#ede7f6;--panel:#1a1030;--card:#1a1030;--line:#2a1f45;--dim:#8a7ab0;--acc:#b388ff}
+body{display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+
+#hud{display:flex;justify-content:space-around;align-items:center;padding:8px 10px;
+  background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0}
+.st{text-align:center;font-size:9px;color:var(--dim);letter-spacing:.5px}
+.st b{display:block;margin-top:1px;font-size:16px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums}
+.st b.g{color:#4caf50}.st b.y{color:#ffc107}.st b.r{color:#ff5252}
+
+#settings{background:var(--panel);border-bottom:1px solid var(--line);max-height:0;
+  overflow:hidden;transition:max-height .3s;flex-shrink:0}
+#settings.open{max-height:85vh;overflow-y:auto}
+.set-block{padding:10px 12px;border-bottom:1px solid var(--line)}
+.set-block:last-child{border-bottom:0}
+.set-label{font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:6px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{flex:1;min-width:54px;padding:7px 4px;border-radius:7px;border:1px solid var(--line);
+  background:transparent;color:var(--dim);font-size:11px;font-weight:600;cursor:pointer;
+  text-align:center;transition:all .12s;font-family:inherit}
+.chip.active{background:var(--acc);border-color:var(--acc);color:#06121a}
+.row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);margin-top:6px}
+.row b{color:var(--acc);font-size:12px;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1;accent-color:var(--acc);height:20px;touch-action:auto}
+input[type=color]{width:32px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:transparent;cursor:pointer}
+.switch{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);cursor:pointer}
+.switch input{accent-color:var(--acc);width:16px;height:16px}
+
+#gameWrap{position:relative;flex:1;min-height:0}
+canvas#game{display:block;width:100%;height:100%;touch-action:none}
+#hint{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);
+  background:rgba(0,0,0,.75);padding:9px 18px;border-radius:999px;font-size:12px;
+  color:#ccc;pointer-events:none;white-space:nowrap;transition:opacity .3s;z-index:5}
+#hint.hide{opacity:0}
+#combo{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:24px;
+  font-weight:800;color:#4caf50;pointer-events:none;text-shadow:0 0 12px rgba(76,175,80,.6);
+  opacity:0;transition:opacity .2s;z-index:5}
+#combo.show{opacity:1}
+#beat{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:80px;height:80px;
+  border-radius:50%;border:3px solid var(--acc);opacity:0;pointer-events:none;z-index:4;transition:opacity .1s}
+
+#bar{display:flex;gap:6px;padding:8px 10px;background:var(--panel);flex-shrink:0}
+.btn{padding:11px 14px;border:0;border-radius:10px;background:var(--acc);color:#06121a;
+  font-weight:700;font-size:13px;cursor:pointer;transition:transform .08s;font-family:inherit;white-space:nowrap}
+.btn:active{transform:scale(.96)}
+.btn.ghost{background:var(--line);color:var(--fg)}
+.btn.danger{background:#ff5252;color:#fff}
+.btn.main{flex:1}
+.btn.sm{padding:6px 10px;font-size:11px;border-radius:7px}
+
+.panel{position:absolute;inset:0;display:none;flex-direction:column;padding:16px;
+  overflow-y:auto;background:var(--bg);z-index:50}
+.panel.show{display:flex}
+.p-title{text-align:center;font-size:11px;color:var(--dim);letter-spacing:3px;margin-bottom:4px}
+.p-big{text-align:center;font-size:52px;font-weight:800;line-height:1;color:var(--acc);font-variant-numeric:tabular-nums}
+.p-big i{font-style:normal;font-size:20px;opacity:.5}
+.p-sub{text-align:center;font-size:11px;color:var(--dim);margin-bottom:12px}
+.p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.p-cell{background:var(--card);border-radius:9px;padding:9px 4px;text-align:center}
+.p-cell b{display:block;font-size:17px;color:var(--fg);font-variant-numeric:tabular-nums}
+.p-cell span{display:block;font-size:9px;color:var(--dim);margin-top:2px}
+
+.bias-box{background:var(--card);border-radius:10px;padding:10px;margin-top:10px}
+.bias-title{font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:8px}
+.bias-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;background:var(--line);margin-bottom:8px}
+.bias-seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;
+  color:#fff;transition:width .4s;min-width:0;overflow:hidden}
+.bias-seg.perfect{background:linear-gradient(180deg,#4caf50,#388e3c)}
+.bias-seg.over{background:linear-gradient(180deg,#ff9800,#ef6c00)}
+.bias-seg.under{background:linear-gradient(180deg,#2196f3,#1565c0)}
+.bias-legend{display:flex;justify-content:space-around;font-size:10px;color:var(--dim);margin-bottom:8px}
+.bias-legend span{display:flex;align-items:center;gap:4px}
+.bias-legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.bias-legend b{color:var(--fg);font-variant-numeric:tabular-nums}
+.bias-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:10px;color:var(--dim);text-align:center}
+.bias-nums b{display:block;color:var(--acc);font-size:14px;font-variant-numeric:tabular-nums;margin-top:2px}
+
+.chart-box{margin-top:8px;background:var(--card);border-radius:10px;padding:8px}
+.chart-title{font-size:10px;color:var(--dim);margin-bottom:4px;letter-spacing:1px}
+.chart-box canvas{display:block;width:100%;height:auto;border-radius:6px}
+.p-actions{display:flex;gap:6px;margin-top:auto;padding-top:12px;flex-wrap:wrap}
+#heatCanvas{width:100%;height:auto;border-radius:8px;background:var(--bg)}
+
+#replayBar{position:absolute;left:10px;right:10px;bottom:14px;display:none;flex-direction:column;gap:8px;
+  background:rgba(0,0,0,.88);padding:10px 12px;border-radius:12px;z-index:40}
+#replayBar.show{display:flex}
+.rp-row{display:flex;align-items:center;gap:8px}
+#rpProgress{flex:1;height:5px;background:#2a2a2a;border-radius:3px;position:relative;cursor:pointer}
+#rpFill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--acc);border-radius:3px}
+.rp-speed{font-size:10px;color:var(--fg);background:var(--line);padding:3px 8px;border-radius:5px;
+  cursor:pointer;font-family:inherit;border:0}
+.rp-speed.active{background:var(--acc);color:#06121a}
+
+.hist-item{display:flex;justify-content:space-between;align-items:center;background:var(--card);
+  border-radius:10px;padding:11px 13px;margin-bottom:7px}
+.hist-acc{font-size:20px;font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums}
+.hist-meta{font-size:10px;color:var(--dim);margin-top:2px}
+.hist-right{text-align:right}
+.hist-dist{font-size:13px;color:var(--fg);font-variant-numeric:tabular-nums}
+.hist-date{font-size:10px;color:var(--dim);margin-top:2px}
+.hist-empty{text-align:center;color:var(--dim);font-size:13px;padding:50px 0}
+.hist-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px}
+.hist-head b{font-size:14px}
+
+#achv{position:absolute;top:60px;left:50%;transform:translate(-50%,-20px);
+  background:linear-gradient(135deg,#ffc107,#ff9800);color:#1a1000;padding:9px 18px;border-radius:999px;
+  font-size:12px;font-weight:800;opacity:0;transition:all .4s;pointer-events:none;z-index:60;
+  box-shadow:0 4px 20px rgba(255,193,7,.4)}
+#achv.show{opacity:1;transform:translate(-50%,0)}
+
+.streak-bar{display:flex;justify-content:space-between;gap:4px;padding:8px 10px;background:var(--panel);
+  border-bottom:1px solid var(--line);font-size:10px;color:var(--dim)}
+.streak-bar b{color:var(--acc)}
+.day{width:22px;height:22px;border-radius:50%;background:var(--line);display:flex;align-items:center;
+  justify-content:center;font-size:9px;color:var(--dim)}
+.day.done{background:#4caf50;color:#fff}
+.day.today{border:2px solid var(--acc)}
+
+。 挑战，195，247，{(79没有一个.15)，rgba(79，195，247，.05))；挑战{背景:线性梯度(135deg,RGBA(79,195,247,.15),RGBA(79,195,247,.05));
+边框：1px实心变量(--acc)；边框半径：10px；填充：10px；底边距：10px}边境:1PX 固体 var(--acc);边界半径:10PX;填充:10PX;底边距:10PX}
+.挑战标题{字体大小:11PX;颜色:var(--acc);字体粗细:700;底边距:4PX}挑战标题{字体大小:11PX;颜色:var(--acc);字体粗细:700;底边距:4PX}
+.challenge-desc{字体大小:12PX;颜色:var(--fg);底边距:6PX;线高:1.5}challenge-desc{字体大小:12PX;颜色:var(--fg);底边距:6PX;线高:1.5}
+。挑战进度{高度：6px；背景：var(--行)；边界半径：3px；溢出：隐藏}挑战-进展{高度:6PX;背景:var(--行);边界半径:3PX;溢出:隐藏的}
+.挑战-进展 我{显示:块;高度:100%;背景:var(--acc);宽度:0;过渡:宽度 .4s}挑战-进展 我{显示:块;高度:100%;背景:var(--acc);宽度:0;过渡:宽度 .4s}
+.挑战状态{字体大小:10PX;颜色:var(--dim);上边距:4PX;文本对齐:正确的}挑战状态{字体大小:10PX;颜色:var(--dim);上边距:4PX;文本对齐:正确的}
+
+.achv-list{显示：网格；网格模板列：重复(自动填充，最小值(140px，1Fr))；间隙：8px}achv-list{显示:网格;网格模板列:重复(自动填充,minmax(140PX,1Fr));差距:8PX}
+.achv卡{背景:var(--CARD)；边框半径：10px；填充：10px；显示：flex；flex方向：列；achv卡{背景:var(--CARD);边界半径:10PX;填充:10PX;显示:弯曲;挠曲方向:柱;
+间隙：4px；不透明度：.5；过渡：不透明度.2s}差距:4PX;不透明度:.5;过渡:不透明度 .2s}
+.achv卡.已解锁{不透明度：1；边框：1px实体#ffc107；背景：线性梯度(135度，RGBA(255，193，7，.1)，透明)}achv卡.已解锁{不透明度:1;边境:1PX 固体#ffc107；背景:线性梯度(135deg,RGBA(255,193,7,.1),透明的)}
+.achv卡 .姓名{字体大小:12PX;字体粗细:700;颜色:var(--fg)}achv卡 .姓名{字体大小:12PX;字体粗细:700;颜色:var(--fg)}
+.achv卡.DESC{字体大小:10PX；颜色:var(--dim)；线高:1.4}achv卡 .DESC{字体大小:10PX;颜色:var(--dim);线高:1.4}
+
+.长途汽车卡{背景：线性梯度(135度，RGBA(79，195，247，.1)，rgba(79，195，247，.02))；长途汽车卡{背景:线性梯度(135deg,RGBA(79,195,247,.1),RGBA(79,195,247,.02));
+边框：1px实心变量(--acc)；边框半径：10px；填充：12px；底边距：10px}边境:1PX 固体 var(--acc);边界半径:10PX;填充:12PX;底边距:10PX}
+.教练头衔{字体大小:12PX；字体-重量:800；颜色:var(--acc)；驳船底:6PX}教练头衔{字体大小:12PX;字体粗细:800;颜色:var(--acc);底边距:6PX}
+.客车车身{字体大小:12PX;线高:1.6;颜色:var(--fg)}客车车身{字体大小:12PX;线高:1.6;颜色:var(--fg)}
+.客车车身 UL{边距：6px0；左边填充：20px}客车车身 UL{边缘:6PX 0;左填充:20PX}
+.客车车身 锂{边界：3px0}客车车身 锂{边缘:3PX 0}
+。额定行{显示：弹性；对齐项目：居中；间距：8px；边距：6px0}额定值-行{显示:弯曲;对齐项目:中心;差距:8PX;边缘:6PX 0}
+.评级标签{字体大小:10PX；颜色:var(--dim)；宽度:56PX}评级标签{字体大小:10PX;颜色:var(--dim);宽度:56PX}
+。额定线{弯曲:1；高度：8PX；背景：var(--行)；边框半径：4px；溢出：隐藏}额定杆{弯曲:1;高度:8PX;背景:var(--行);边界半径:4PX;溢出:隐藏的}
+.额定填充{高度:100%;背景:var(--acc);过渡:宽度 .5s}额定填充{高度:100%;背景:var(--acc);过渡:宽度 .5s}
+.额定值{字体大小:11PX；颜色:var(--acc)；最小宽度：36px；文本对齐：右；字体-变量-数字：表格-数字}额定值{字体大小:11PX;颜色:var(--acc);最小宽度:36PX;文本对齐:正确的;font-variant-numeric:表格数}
+
+.隐藏的{显示:没有！重要}隐藏的{显示:没有一个！重要}
+
+@介质(方向：横向)和(最大高度：620 PX){ (方向: 风景) 和 (最大高度:620PX){
+#HUD{填充：4px10px}.圣{字体大小:8PX}.圣 b{字体大小:14PX；上边距：0}HUD{填充:4PX 10PX}.圣{字体大小:8PX}.圣 b{字体大小:14PX;上边距:0}
+#设置.打开{最大高度:90VH}设置.打开{最大高度:90VH}
+.set-block{填充:6PX 12PX}.set-label{字体大小:9PX；驳船-底部:4PX}set-block{填充:6PX 12PX}.set-label{字体大小:9PX;底边距:4PX}
+.芯片{填充:5PX 4PX；字体大小：10PX}。行{页边距顶部：4px；字体大小：10px}芯片{填充:5PX 4PX;字体大小:10PX}.行{上边距:4PX;字体大小:10PX}
+#酒吧{填充:5PX10PX}.BTN{填充:8PX14PX；字体大小：12PX；边框半径：9PX}酒吧{填充:5PX 10PX}.BTN{填充:8PX 14PX;字体大小:12PX;边界半径:9PX}
+.BTN.SM{填充：5px9px；字体大小：10px}BTN.SM{填充:5PX 9PX;字体大小:10PX}
+.面板{填充:10PX14PX}面板{填充:10PX 14PX}
+.P-标题{字体大小:10PX；驳船-底部:2PX}P-标题{字体大小:10PX;底边距:2PX}
+.p大{字体大小:38PX}。p-sub{字体大小:10PX；驳船-底部:6PX}P-大{字体大小:38PX}.p-sub{字体大小:10PX;底边距:6PX}
+.P-网格{网格-模板-列：重复(6，1Fr)；间隙：5px}P-网格{网格模板列:重复(6,1Fr);差距:5PX}
+.p-单元格{填充：6px4px}.P-单元格b{字体大小:14PX}.p-单元格跨度{字体大小:8PX}P细胞{填充:6PX 4PX}.P细胞 b{字体大小:14PX}.P细胞 跨度{字体大小:8PX}
+。图表框{填充：5px；上边距：5px}。图表标题{字体大小:9PX}图表框{填充:5PX;上边距:5PX}.图表标题{字体大小:9PX}
+。斜线框{填充：8px；上边距：6px}。斜线条{高度：22px}偏压箱{填充:8PX;上边距:6PX}.偏置杆{高度:22PX}
+#暗示{底部:12PX；字体-size:11PX；填充:7px14px}暗示{底部:12PX;字体大小:11PX;填充:7PX 14PX}
+#联合体{字体大小:20PX；顶部:8PX}联合体{字体大小:20PX;顶端:8PX}
+.条纹条{填充：4px10px；字体大小：9px}条纹条{填充:4PX 10PX;字体大小:9PX}
+.一天{宽度：18px；高度：18px；字体大小：8px}一天{宽度:18PX;高度:18PX;字体大小:8PX}
+}
+@介质(方向：横向)和(最大高度：420px){ (方向: 风景) 和 (最大高度:420PX){
+#HUD{显示:没有一个}.P-大{字体大小:32PX}HUD{显示:没有一个}.P-大{字体大小:32PX}
+.p-网格{网格-模板-列：重复(3，1Fr)}P-网格{网格模板列:重复(3,1Fr)}
+.条纹条{显示：无}条纹条{显示:没有一个}
+}
+</风格>
+</头>
+ <body data-theme="dark">
+
+<!-- ============ 顶部 HUD ============ -->
+<div id="hud">
+  <div class="st">准度<b id="hAcc">--</b></div>
+  <div class="st">均距<b id="hDist">--</b></div>
+  <div class="st">时间<b id="hTime">0.0</b></div>
+  <div class="st">连击<b id="hStreak" class="g">0.0</b></div>
+  <div class="st">得分<b id="hScore" class="y">0</b></div>
+  <div class="st">抖动<b id="hJerk" class="r">0</b></div>
+</div>
+
+<!-- ============ 打卡条 ============ -->
+<div class="streak-bar">
+  <span>🔥 连续打卡 <b id="streakDays">0</b> 天</span>
+  <div style="display:flex;gap:3px" id="weekDays"></div>
+  <span>今日训练 <b id="todayMin">0</b> 分钟</span>
+</div>
+
+<!-- ============ 设置面板 ============ -->
+<div id="settings">
+  <div class="set-block">
+    <div class="set-label">训练模式</div>
+    <div class="chips" id="modeChips">
+      <button class="chip active" data-v="track">跟枪</button>
+      <button class="chip" data-v="click">点击</button>
+      <button class="chip" data-v="flick">甩枪</button>
+      <button class="chip" data-v="multi">多靶</button>
+      <button class="chip" data-v="trackFlick">跟+闪</button>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="set-label">难度</div>
+    <div class="chips" id="diffChips">
+      <button class="chip" data-v="0">简单</button>
+      <button class="chip active" data-v="1">普通</button>
+      <button class="chip" data-v="2">困难</button>
+      <button class="chip" data-v="3">极限</button>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="set-label">靶子移动</div>
+    <div class="chips" id="moveChips">
+      <button class="chip active" data-v="normal">匀速</button>
+      <button class="chip" data-v="variable">变速</button>
+      <button class="chip" data-v="flicker">闪现</button>
+      <button class="chip" data-v="circle">环绕</button>
+      <button class="chip" data-v="ai">AI躲避</button>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="set-label">主题</div>
+    <div class="chips" id="themeChips">
+      <button class="chip active" data-v="dark">暗夜</button>
+      <button class="chip" data-v="light">日间</button>
+      <button class="chip" data-v="purple">霓虹</button>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="set-label">参数微调</div>
+    <div class="row">
+      <span style="width:46px">速度</span>
+      <input type="range" id="sSpeed" min="0.4" max="2.5" step="0.1" value="1">
+      <b id="vSpeed">1.0x</b>
+    </div>
+    <div class="row">
+      <span style="width:46px">靶子</span>
+      <input type="range" id="sSize" min="0.5" max="2" step="0.1" value="1">
+      <b id="vSize">1.0x</b>
+    </div>
+    <div class="row">
+      <span style="width:46px">准星</span>
+      <input type="range" id="sCross" min="8" max="36" step="2" value="18">
+      <b id="vCross">18</b>
+    </div>
+  </div>
+
+  <div class="set-block">
+    <div class="chips">
+      <label class="switch"><input type="checkbox" id="sSound" checked>音效</label>
+      <label class="switch"><input type="checkbox" id="sVib" checked>震动</label>
+      <label class="switch"><input type="checkbox" id="sTrail" checked>轨迹</label>
+      <label class="switch"><input type="checkbox" id="sBias">偏差实时</label>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 画布区 ============ -->
+<div id="gameWrap">
+  <canvas id="game"></canvas>
+  <div id="hint">按住屏幕，把准星贴在红球上</div>
+  <div id="combo"></div>
+  <div id="beat"></div>
+  <div id="achv"></div>
+
+  <!-- 结果面板 -->
+  <div class="panel" id="resultPanel">
+    <div class="p-title">训 练 结 果</div>
+    <div class="p-big"><span id="rAcc">0</span><i>%</i></div>
+    <div class="p-sub" id="rGrade">— 继续努力 —</div>
+    <div class="p-grid">
+      <div class="p-cell"><b id="rDist">0</b><span>平均距离</span></div>
+      <div class="p-cell"><b id="rMax">0</b><span>最远距离</span></div>
+      <div class="p-cell"><b id="rTime">0</b><span>时长 秒</span></div>
+      <div class="p-cell"><b id="rStreak">0</b><span>最佳连击</span></div>
+      <div class="p-cell"><b id="rScore">0</b><span>得分</span></div>
+      <div class="p-cell"><b id="rJerk">0</b><span>抖动指数</span></div>
+    </div>
+
+    <div class="coach-card">
+      <div class="coach-title">🤖 AI 教练</div>
+      <div class="coach-body" id="coachBody">分析中...</div>
+    </div>
+
+    <div class="bias-box" id="biasBox">
+      <div class="bias-title">跟枪偏差分析</div>
+      <div class="bias-bar">
+        <div class="bias-seg perfect" id="segPerfect" style="width:0%"></div>
+        <div class="bias-seg over" id="segOver" style="width:0%"></div>
+        <div class="bias-seg under" id="segUnder" style="width:0%"></div>
+      </div>
+      <div class="bias-legend">
+        <span><i style="background:#4caf50"></i>完美 <b id="vPerfect">0%</b></span>
+        <span><i style="background:#ff9800"></i>过靶 <b id="vOver">0%</b></span>
+        <span><i style="background:#2196f3"></i>欠靶 <b id="vUnder">0%</b></span>
+      </div>
+      <div class="bias-nums">
+        <div>前向偏差<b id="vForward">0</b></div>
+        <div>侧向偏差<b id="vLateral">0</b></div>
+        <div>抖动指数<b id="vJerk">0</b></div>
+      </div>
+      <div id="biasHint" style="font-size:10px;color:var(--dim);text-align:center;margin-top:8px;line-height:1.5"></div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">准度曲线</div>
+      <canvas id="chartAcc" width="640" height="140"></canvas>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">命中热力图</div>
+      <canvas id="heatCanvas" width="640" height="300"></canvas>
+    </div>
+
+    <div class="p-actions">
+      <button class="btn main" id="btnReplay">▶ 轨迹回放</button>
+      <button class="btn ghost" id="btnCloseResult">关闭</button>
+    </div>
+  </div>
+
+  <!-- 回放栏 -->
+  <div id="replayBar">
+    <div class="rp-row">
+      <button class="btn ghost sm" id="rpPlay">暂停</button>
+      <div id="rpProgress"><div id="rpFill"></div></div>
+      <span style="font-size:10px;color:var(--dim);min-width:44px;text-align:right" id="rpTime">0.0s</span>
+    </div>
+<div><="rp-row"风格"justify-content：居中""btn重影"div class="rp-row" 风格="justify-content：居中">
+<按钮 班级="rp速度"data-s="0.5">0.5x</按钮>按钮 班级="rp速度" data-s="0.5">0.5x</按钮>
+<按钮 班级="rp速度激活"data-s="1">1x</按钮>按钮 班级="rp速度激活" data-s="1">1x</按钮>
+<按钮 班级="rp速度"data-s="2">2x</按钮>按钮 班级="rp速度" data-s="2">2x</按钮>
+<按钮 班级="rp速度"data-s="4">4x</按钮>按钮 班级="rp速度" data-s="4">4x</按钮>
+<按钮 班级="btn ghost sm"身份标识="rp退出">退出</按钮>按钮 班级="btn ghost sm" 身份标识="rp退出">退出</按钮>
+</div>div>
+</div>div>
+
+<!-- 历史记录面板 -->-- 历史记录面板 -->
+<div 班级="面板"身份标识="historyPanel">div 班级="面板" 身份标识="historyPanel">
+<div 班级="hist-head">div 班级="hist-head">
+<b>历史记录</b>b>历史记录</b>
+<div 风格="显示：柔线；间隙：5px；柔线缠绕：缠绕">div 风格="显示：柔线；间隙：5px；柔线缠绕：缠绕">
+<按钮 班级="btn ghost sm"身份标识="hExport">导出</按钮>按钮 班级="btn ghost sm" 身份标识="hExport">导出</按钮>
+<按钮 班级="btn ghost sm"身份标识="h导入">导入</按钮>按钮 班级="btn ghost sm" 身份标识="h导入">导入</按钮>
+<按钮 班级="btn ghost sm"身份标识="h清除">清空</按钮>按钮 班级="btn ghost sm" 身份标识="h清除">清空</按钮>
+<按钮 班级="btn ghost sm"身份标识="hClose">关闭</按钮>按钮 班级="btn ghost sm" 身份标识="hClose">关闭</按钮>
+</div>div>
+</div>div>
+
+<div 风格="显示：网格；网格模板列：1fr1FR1FR；间距：8px；填充：12px；背景：var(--CARD)；边框半径：10px；底边距：10px；文本对齐：居中">div 风格="显示：网格；网格模板列：1fr1fr1FR；间隙：8px；填充：12px；背景：var(--CARD)；边界半径：10px；底边距：10px；文字对齐：居中">
+<div><b 身份标识="bestAcc"风格="显示：块；字体大小：18px；颜色：var(--acc)">--</b><跨度 风格="font-size:10px；color:var(--dim)">最佳准确度</跨度></div>div><b 身份标识="bestAcc" 风格="显示：块；字体大小：18px；颜色：var(--acc)">--</b><跨度 风格="font-size:10px；color:var(--dim)">最佳准度</跨度></div>
+<div><b 身份标识="bestScore"风格="显示：块；字体大小：18px；颜色：var(--acc)">--</b><跨度 风格="font-size:10px；color:var(--dim)">最高得分</跨度></div>div><b 身份标识="bestScore" 风格="显示：块；字体大小：18px；颜色：var(--acc)">--</b><跨度 风格="font-size:10px；color:var(--dim)">最高得分</跨度></div>
+<div><b 身份标识="总计最小值"风格="显示：块；字体大小：18px；颜色：var(--acc)">0</b><跨度累计分钟</跨度></div>div><b 身份标识="totalMin" 风格="显示：块；字体大小：18px；颜色：var(--acc)">0</b><跨度 风格="font-size:10px；color:var(--dim)">累计分钟</跨度></div>
+</div>div>
+
+<div 班级="挑战"身份标识="dailyChallenge">div 班级="挑战" 身份标识="dailyChallenge">
+<div 班级="挑战-标题">🎯 每日挑战</div>div 班级="挑战-标题">🎯 每日挑战</div>
+<div 班级="challenge-desc"身份标识="challengeDesc">加载中...</div>div 班级="challenge-desc" 身份标识="challengeDesc">加载中...</div>
+<div 班级="挑战-进度"><我 身份标识="challengeProgress"></我></div>div 班级="挑战-进度"><我 身份标识="challengeProgress"></我></div>
+<div 班级="质询状态"身份标识="challengeStatus"></div>div 班级="质询状态" 身份标识="challengeStatus"></div>
+</div>div>
+
+<div 班级="图表框"风格="上边距：0；下边距：12px">div 班级="图表框" 风格="上边距：0；下边距：12px">
+<div 班级="图表-标题">最近20次准度趋势</div>div 班级="图表-标题">最近 20 次准度趋势</div>
+<帆布 身份标识="chartTrend"宽度="640"高度="160"></帆布>帆布 身份标识="chartTrend" 宽度="640" 高度="160"></帆布>
+</div>div>
+
+<div 身份标识="historyList"></div>div 身份标识="historyList"></div>
+<输入 类型="文件"身份标识="fileImport"一个ccept=".json"班级="隐藏">输入 类型="文件" 身份标识="fileImport" 接受=".json" 班级="隐藏">
+</div>div>
+
+<!-- 成就面板 -->-- 成就面板 -->
+<div 班级="面板"身份标识="achvPanel">div 班级="面板" 身份标识="achvPanel">
+<div 班级="hist-head">div 班级="hist-head">
+<b>成就</b>b>成就</b>
+<div 风格="显示：柔性；间隙：5px">div 风格="显示：柔性；间隙：5px">
+<按钮 班级="btn ghost sm"身份标识="achvClose">关闭</按钮>按钮 班级="btn ghost sm" 身份标识="achvClose">关闭</按钮>
+</div>div>
+</div>div>
+<div 班级="achv-list"身份标识="achvList"></div>div 班级="achv-list" 身份标识="achvList"></div>
+</div>div>
+</div>div>
+
+<!--============底部按钮============-->--============底部按钮============-->
+<div 身份标识="条形图">div 身份标识="条形图">
+<按钮 班级="btn ghost sm"身份标识="btnSettings">⚙</按钮>按钮 班级="btn ghost sm" 身份标识="btnSettings">⚙</按钮>
+<按钮 班级="btn main"身份标识="btn开始">开始训练</按钮>按钮 班级="btn main" 身份标识="btnStart">开始训练</按钮>
+<按钮 班级="btn重影"身份标识="btn重置">重置</按钮>按钮 班级="btn重影" 身份标识="btn重置">重置</按钮>
+<按钮 班级="btn重影"身份标识="btn历史">记录</按钮>按钮 班级="btn重影" 身份标识="btn历史">记录</按钮>
+<按钮 班级="btn重影"身份标识="btnAchv">🏆</按钮>按钮 班级="btn重影" 身份标识="btnAchv">🏆</按钮>
+</div>div>
+
+<脚本>脚本>
+  (function(){
+'use strict';
+
+/* ============================================================
+   常量
+============================================================ */
+const HIST_KEY = 'aimTrainer_history_v1';
+const SET_KEY  = 'aimTrainer_settings_v1';
+const ACHV_KEY = 'aimTrainer_achv_v1';
+const STREAK_KEY = 'aimTrainer_streak_v1';
+const CHALLENGE_KEY = 'aimTrainer_challenge_v1';
+
+const DIFFS = [
+  { name:'简单', r:0.095, speed:0.26, tMin:1.4, tMax:2.8 },
+  { name:'普通', r:0.078, speed:0.36, tMin:0.9, tMax:2.0 },
+  { name:'困难', r:0.062, speed:0.48, tMin:0.7, tMax:1.5 },
+  { name:'极限', r:0.048, speed:0.62, tMin:0.5, tMax:1.0 }
+];
+
+const MODE_HINTS = {
+  track:'按住屏幕，把准星贴在红球上',
+  click:'点击红球，越快越准越好',
+  flick:'红球闪现到新位置，快速点它',
+  multi:'同时有多个红球，全部点掉',
+  trackFlick:'跟住红球，闪现时快速重新锁住'
+};
+
+/* ============================================================
+   状态
+============================================================ */
+const S = {
+  phase:'idle', mode:'track', diff:1, moveMode:'normal',
+  speedMul:1, sizeMul:1, crossSize:18,
+  sound:true, vibrate:true, showTrail:true, showBias:false,
+  theme:'dark',
+
+  W:1, H:1, dpr:1,
+  targets:[], aim:{x:0,y:0,active:false},
+  aimTime:0, hitTime:0, distSum:0, distMax:0, samples:0,
+  sessionTime:0, streak:0, bestStreak:0,
+  shots:0, hits:0, misses:0, score:0,
+  overshootTime:0, undershootTime:0,
+  forwardSum:0, lateralSum:0, lateralSamples:0,
+  jerkSum:0, jerkSamples:0, lastAim:null, lastAimDir:null,
+  rec:[], recTick:0, hitPoints:[],
+  replayT:0, replayIdx:0, replayEnd:0, replaySpeed:1, replayPaused:false,
+  turnTimer:0, lastTs:0
+};
+
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const rand = (a,b) => a + Math.random()*(b-a);
+const todayKey = () => new Date().toISOString().slice(0,10);
+
+/* ============================================================
+   音效 & 震动
+============================================================ */
+let audioCtx = null;
+function beep(freq, dur, vol, type){
+  if (!S.sound) return;
+  try{
+    if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.08, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }catch(_){}
+}
+function vibrate(ms){
+  if (!S.vibrate) return;
+  try{ navigator.vibrate && navigator.vibrate(ms); }catch(_){}
+}
+
+/* ============================================================
+   设置持久化
+============================================================ */
+function saveSettings(){
+  try{
+    localStorage.setItem(SET_KEY, JSON.stringify({
+      mode:S.mode, diff:S.diff, moveMode:S.moveMode,
+      speedMul:S.speedMul, sizeMul:S.sizeMul, crossSize:S.crossSize,
+      sound:S.sound, vibrate:S.vibrate,
+      showTrail:S.showTrail, showBias:S.showBias, theme:S.theme
+    }));
+  }catch(_){}
+}
+function loadSettings(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SET_KEY)||'{}');
+    Object.keys(d).forEach(k=>{ if (d[k]!==undefined) S[k]=d[k]; });
+  }catch(_){}
+}
+function applySettingsToUI(){
+  document.body.dataset.theme = S.theme;
+  document.querySelectorAll('#modeChips .chip').forEach(b=>b.classList.toggle('active', b.dataset.v===S.mode));
+  document.querySelectorAll('#diffChips .chip').forEach(b=>b.classList.toggle('active', +b.dataset.v===S.diff));
+  document.querySelectorAll('#moveChips .chip').forEach(b=>b.classList.toggle('active', b.dataset.v===S.moveMode));
+  document.querySelectorAll('#themeChips .chip').forEach(b=>b.classList.toggle('active', b.dataset.v===S.theme));
+  $('sSpeed').value = S.speedMul; $('vSpeed').textContent = S.speedMul.toFixed(1)+'x';
+  $('sSize').value = S.sizeMul;   $('vSize').textContent = S.sizeMul.toFixed(1)+'x';
+  $('sCross').value = S.crossSize; $('vCross').textContent = S.crossSize;
+  $('sSound').checked = S.sound;
+  $('sVib').checked = S.vibrate;
+  $('sTrail').checked = S.showTrail;
+  $('sBias').checked = S.showBias;
+  $('hint').textContent = MODE_HINTS[S.mode];
+}
+
+/* ============================================================
+   画布
+============================================================ */
+const canvas = $('game');
+const ctx = canvas.getContext('2d');
+
+function resize(){
+  const rect = canvas.parentElement.getBoundingClientRect();
+  S.W = Math.max(1, rect.width);
+  S.H = Math.max(1, rect.height);
+  S.dpr = Math.min(window.devicePixelRatio||1, 3);
+  canvas.width  = Math.round(S.W * S.dpr);
+  canvas.height = Math.round(S.H * S.dpr);
+  canvas.style.width  = S.W + 'px';
+  canvas.style.height = S.H + 'px';
+  ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+  S.targets.forEach(clampTarget);
+}
+
+function targetRadius(){
+  return Math.max(16, Math.min(S.W, S.H) * DIFFS[S.diff].r * S.sizeMul);
+}
+function clampTarget(t){
+  t.r = targetRadius();
+  t.x = clamp(t.x, t.r, Math.max(t.r, S.W-t.r));
+  t.y = clamp(t.y, t.r, Math.max(t.r, S.H-t.r));
+}
+
+/* ============================================================
+   靶子
+============================================================ */
+function makeTarget(cx, cy){
+  const d = DIFFS[S.diff], r = targetRadius();
+  const t = {
+    x: cx!==undefined ? cx : rand(r+10, S.W-r-10),
+    y: cy!==undefined ? cy : rand(r+10, S.H-r-10),
+    r: r, vx:0, vy:0, speedMul:1,
+    orbitAngle: rand(0, Math.PI*2),
+    orbitRadius: rand(0.12, 0.32) * Math.min(S.W, S.H),
+    flickerTimer: 0,
+    aiState: 'wander', aiTimer: rand(0.8, 1.6),
+    visible: true
+  };
+  const base = Math.min(S.W, S.H) * d.speed * S.speedMul;
+  const a = rand(0, Math.PI*2);
+  t.vx = Math.cos(a)*base; t.vy = Math.sin(a)*base;
+  clampTarget(t);
+  return t;
+}
+function resetTargets(){
+  S.targets = [];
+  const n = S.mode === 'multi' ? 3 : 1;
+  for (let i=0; i<n; i++) S.targets.push(makeTarget(S.W/2, S.H/2));
+  S.turnTimer = rand(DIFFS[S.diff].tMin, DIFFS[S.diff].tMax);
+}
+function respawnTarget(t){
+  const r = targetRadius();
+  t.x = rand(r+10, S.W-r-10);
+  t.y = rand(r+10, S.H-r-10);
+  t.r = r;
+  const base = Math.min(S.W, S.H) * DIFFS[S.diff].speed * S.speedMul;
+  const a = rand(0, Math.PI*2);
+  t.vx = Math.cos(a)*base; t.vy = Math.sin(a)*base;
+  t.speedMul = 1; t.flickerTimer = 0;
+  t.aiState = 'wander'; t.aiTimer = rand(0.8, 1.6);
+}
+
+/* ============================================================
+   靶子 AI 躲避
+============================================================ */
+function updateAITarget(t, dt){
+  const d = DIFFS[S.diff];
+  const base = Math.min(S.W, S.H) * d.speed * S.speedMul;
+  const threatDist = S.aim.active
+    ? Math.hypot(S.aim.x-t.x, S.aim.y-t.y)
+    : Infinity;
+  const panicRange = t.r * 5;
+
+  t.aiTimer -= dt;
+
+  if (threatDist < panicRange && t.aiState !== 'dash'){
+    if (t.aiTimer <= 0){
+      t.aiState = 'dash';
+      t.aiTimer = rand(0.25, 0.5);
+      const dx = t.x - S.aim.x, dy = t.y - S.aim.y;
+      const m = Math.hypot(dx, dy) || 1;
+      const ang = Math.atan2(dy/m, dx/m) + rand(-0.4, 0.4);
+      t.vx = Math.cos(ang)*base*1.8;
+      t.vy = Math.sin(ang)*base*1.8;
+    }
+  } else if (t.aiState === 'dash' && t.aiTimer <= 0){
+    t.aiState = 'wander';
+    t.aiTimer = rand(0.8, 1.8);
+  } else if (t.aiState === 'wander' && t.aiTimer <= 0){
+    t.aiTimer = rand(0.8, 1.8);
+    const ang = Math.atan2(t.vy, t.vx) + rand(-1.2, 1.2);
+    t.vx = Math.cos(ang)*base;
+    t.vy = Math.sin(ang)*base;
+  }
+
+  // 靠近边缘时往中心拉
+  const edgeDist = Math.min(t.x, S.W-t.x, t.y, S.H-t.y);
+  if (edgeDist < t.r*3){
+    const cx = S.W/2-t.x, cy = S.H/2-t.y;
+    const cm = Math.hypot(cx, cy) || 1;
+    t.vx += cx/cm * base * dt * 2;
+    t.vy += cy/cm * base * dt * 2;
+  }
+
+  // 限制最大速度
+  const sp = Math.hypot(t.vx, t.vy), maxSp = base*2.2;
+  if (sp > maxSp){ t.vx = t.vx/sp*maxSp; t.vy = t.vy/sp*maxSp; }
+
+  t.x += t.vx*dt; t.y += t.vy*dt;
+  if (t.x < t.r){ t.x = t.r; t.vx = Math.abs(t.vx); }
+  else if (t.x > S.W-t.r){ t.x = S.W-t.r; t.vx = -Math.abs(t.vx); }
+  if (t.y < t.r){ t.y = t.r; t.vy = Math.abs(t.vy); }
+  else if (t.y > S.H-t.r){ t.y = S.H-t.r; t.vy = -Math.abs(t.vy); }
+}
+
+/* ============================================================
+   靶子运动
+============================================================ */
+function updateTargets(dt){
+  const d = DIFFS[S.diff];
+
+  S.targets.forEach(t=>{
+    if (S.moveMode === 'ai'){ updateAITarget(t, dt); return; }
+
+    if (S.moveMode === 'flicker'){
+      t.flickerTimer -= dt;
+      if (t.flickerTimer <= 0){
+        t.flickerTimer = rand(0.5, 1.1);
+        respawnTarget(t);
+        beep(880, 0.05, 0.03, 'triangle');
+      }
+      return;
+    }
+    if (S.moveMode === 'circle'){
+      t.orbitAngle += dt*0.9*S.speedMul;
+      const cx = S.W/2, cy = S.H/2;
+      t.x = clamp(cx + Math.cos(t.orbitAngle)*t.orbitRadius, t.r, S.W-t.r);
+      t.y = clamp(cy + Math.sin(t.orbitAngle)*t.orbitRadius*0.75, t.r, S.H-t.r);
+      return;
+    }
+
+    if (S.moveMode === 'variable'){
+      t.flickerTimer -= dt;
+      if (t.flickerTimer <= 0){
+        t.flickerTimer = rand(0.4, 0.9);
+        t.speedMul = rand(0.4, 1.8);
+      }
+    } else {
+      t.speedMul = 1;
+    }
+
+    t.x += t.vx*dt*t.speedMul;
+    t.y += t.vy*dt*t.speedMul;
+
+    if (t.x < t.r){ t.x = t.r; t.vx = Math.abs(t.vx); }
+    else if (t.x > S.W-t.r){ t.x = S.W-t.r; t.vx = -Math.abs(t.vx); }
+    if (t.y < t.r){ t.y = t.r; t.vy = Math.abs(t.vy); }
+    else if (t.y > S.H-t.r){ t.y = S.H-t.r; t.vy = -Math.abs(t.vy); }
+  });
+
+  if (S.moveMode === 'normal' || S.moveMode === 'variable'){
+    S.turnTimer -= dt;
+    if (S.turnTimer <= 0){
+      S.turnTimer = rand(d.tMin, d.tMax);
+      const t = S.targets[0];
+      if (t){
+        const base = Math.min(S.W, S.H) * d.speed * S.speedMul;
+        const ang = Math.atan2(t.vy, t.vx) + rand(-0.7, 0.7);
+        t.vx = Math.cos(ang)*base;
+        t.vy = Math.sin(ang)*base;
+      }
+    }
+  }
+}
+
+/* ============================================================
+   HUD
+============================================================ */
+function updateHUD(){
+  $('hAcc').textContent = S.aimTime>0 ? (S.hitTime/S.aimTime*100).toFixed(1)+'%' : '--';
+  $('hDist').textContent = S.samples>0 ? Math.round(S.distSum/S.samples) : '--';
+  $('hTime').textContent = S.sessionTime.toFixed(1);
+  $('hStreak').textContent = S.streak.toFixed(1);
+  $('hScore').textContent = Math.round(S.score);
+  $('hJerk').textContent = S.jerkSamples>0
+    ? (S.jerkSum/S.jerkSamples*180/Math.PI).toFixed(0) : '--';
+}
+function computeScore(){
+  if (S.mode === 'track' || S.mode === 'trackFlick'){
+    const acc = S.aimTime>0 ? S.hitTime/S.aimTime : 0;
+    return acc*1000 + S.bestStreak*15;
+  }
+  const total = S.hits + S.misses;
+  const acc = total>0 ? S.hits/total : 0;
+  return acc*800 + S.hits*20;
+}
+
+/* ============================================================
+   录制帧（用于回放和曲线）
+============================================================ */
+function recordFrame(){
+  S.recTick++;
+  if (S.recTick % 2 !== 0) return;
+  const frame = { t:S.sessionTime, targets:[], ax:-1, ay:-1 };
+  S.targets.forEach(t=>{
+    frame.targets.push({ x:t.x, y:t.y, r:t.r });
+  });
+  if (S.aim.active){
+    frame.ax = S.aim.x; frame.ay = S.aim.y;
+    if (S.targets[0]){
+      const t = S.targets[0];
+      frame.d = Math.hypot(S.aim.x-t.x, S.aim.y-t.y);
+      frame.dr = t.r;
+      const spd = Math.hypot(t.vx, t.vy);
+      if (spd > 1){
+        const nx = t.vx/spd, ny = t.vy/spd;
+        frame.fwd = (S.aim.x-t.x)*nx + (S.aim.y-t.y)*ny;
+        frame.lat = -(S.aim.x-t.x)*ny + (S.aim.y-t.y)*nx;
+      }
+    }
+  }
+  S.rec.push(frame);
+}
+
+/* ============================================================
+   训练流程
+============================================================ */
+function startTraining(){
+  S.phase = 'running';
+  S.aimTime=0; S.hitTime=0; S.distSum=0; S.distMax=0; S.samples=0;
+  S.sessionTime=0; S.streak=0; S.bestStreak=0;
+  S.shots=0; S.hits=0; S.misses=0; S.score=0;
+  S.overshootTime=0; S.undershootTime=0;
+  S.forwardSum=0; S.lateralSum=0; S.lateralSamples=0;
+  S.jerkSum=0; S.jerkSamples=0; S.lastAim=null; S.lastAimDir=null;
+  S.rec=[]; S.recTick=0; S.hitPoints=[];
+  S.aim.active=false; S.lastTs=0;
+  resetTargets();
+  $('btnStart').textContent = '结束训练';
+  $('btnStart').classList.add('danger');
+  $('hint').classList.add('hide');
+  $('resultPanel').classList.remove('show');
+  $('replayBar').classList.remove('show');
+  updateHUD();
+}
+function endTraining(){
+  S.phase = 'result';
+  S.aim.active = false;
+  $('btnStart').textContent = '开始训练';
+  $('btnStart').classList.remove('danger');
+  $('hint').classList.remove('hide');
+  S.score = computeScore();
+  saveHistory();
+  checkAchievements();
+  updateStreak();
+  updateChallengeProgress();
+  showResult();
+}
+function resetAll(){
+  S.phase = 'idle';
+  S.aimTime=0; S.hitTime=0; S.distSum=0; S.distMax=0; S.samples=0;
+  S.sessionTime=0; S.streak=0; S.bestStreak=0;
+  S.shots=0; S.hits=0; S.misses=0; S.score=0;
+  S.overshootTime=0; S.undershootTime=0;
+  S.forwardSum=0; S.lateralSum=0; S.lateralSamples=0;
+  S.jerkSum=0; S.jerkSamples=0; S.lastAim=null; S.lastAimDir=null;
+  S.rec=[]; S.hitPoints=[]; S.aim.active=false; S.lastTs=0;
+  resetTargets();
+  $('btnStart').textContent = '开始训练';
+  $('btnStart').classList.remove('danger');
+  $('hint').classList.remove('hide');
+  $('resultPanel').classList.remove('show');
+  $('replayBar').classList.remove('show');
+  updateHUD();
+}
+
+/* ============================================================
+   结果面板
+============================================================ */
+function showResult(){
+  const acc = S.aimTime>0 ? S.hitTime/S.aimTime*100
+    : (S.shots>0 ? S.hits/S.shots*100 : 0);
+  $('rAcc').textContent = acc.toFixed(1);
+  $('rDist').textContent = S.samples>0 ? Math.round(S.distSum/S.samples) : 0;
+  $('rMax').textContent = Math.round(S.distMax);
+  $('rTime').textContent = S.sessionTime.toFixed(1);
+  $('rStreak').textContent = S.bestStreak.toFixed(1);
+  $('rScore').textContent = Math.round(S.score);
+  const jerk = S.jerkSamples>0 ? (S.jerkSum/S.jerkSamples*180/Math.PI) : 0;
+  $('rJerk').textContent = jerk.toFixed(1);
+
+  let grade = '— 继续努力 —';
+  if (acc>=95) grade = '★★★★★ 神级';
+  else if (acc>=88) grade = '★★★★ 大师';
+  else if (acc>=78) grade = '★★★ 熟练';
+  else if (acc>=65) grade = '★★ 进阶';
+  else if (acc>=50) grade = '★ 入门';
+  $('rGrade').textContent = grade;
+
+  renderAICoach();
+  renderBiasAnalysis();
+  drawCurves();
+  drawHeatmap();
+  $('resultPanel').classList.add('show');
+}
+
+/* ============================================================
+   AI 教练
+============================================================ */
+function renderAICoach(){
+  const acc = S.aimTime>0 ? S.hitTime/S.aimTime*100 : 0;
+  const pOver = S.aimTime>0 ? S.overshootTime/S.aimTime*100 : 0;
+  const pUnder = S.aimTime>0 ? S.undershootTime/S.aimTime*100 : 0;
+  const pPerfect = S.aimTime>0 ? S.hitTime/S.aimTime*100 : 0;
+  const jerk = S.jerkSamples>0 ? (S.jerkSum/S.jerkSamples*180/Math.PI) : 0;
+  const avgFwd = S.aimTime>0 ? S.forwardSum/S.aimTime : 0;
+
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(_){}
+  const recent = list.slice(0, 10);
+  const recentAcc = recent.length
+    ? recent.reduce((a,x)=>a+(x.acc||0),0)/recent.length : 0;
+
+  const scoreAcc = clamp(acc, 0, 100);
+  const scoreStable = clamp(100 - jerk*2.5, 0, 100);
+  const scoreBias = clamp(100 - Math.abs(avgFwd)*3, 0, 100);
+  const scoreConsist = recentAcc>0
+    ? clamp(100 - Math.abs(acc-recentAcc)*4, 0, 100) : 50;
+
+  const issues = [], tips = [];
+  if (pPerfect < 50) issues.push('准度偏低（'+pPerfect.toFixed(0)+'%）');
+  if (pOver > pUnder+12 && pOver > 22){
+    issues.push('过靶明显（'+pOver.toFixed(0)+'%）');
+    tips.push('降低灵敏度，让手更稳');
+    tips.push('用"预判跟随"，瞄靶子要去的方向');
+  }
+  if (pUnder > pOver+12 && pUnder > 22){
+    issues.push('欠靶明显（'+pUnder.toFixed(0)+'%）');
+    tips.push('提高灵敏度，主动往前送一点');
+    tips.push('眼睛盯住靶子，手跟着眼走');
+  }
+  if (jerk > 30){
+    issues.push('抖动明显（'+jerk.toFixed(1)+'°）');
+    tips.push('先降低速度/难度，把动作做顺');
+    tips.push('用前臂带动，不要只靠手指');
+  }
+  if (S.bestStreak < 2 && S.aimTime > 5){
+    issues.push('连击时间短');
+    tips.push('贴住后保持 1-2 秒再放松');
+  }
+  if (avgFwd > 4) tips.push('整体偏"过"，方向感偏前');
+  if (avgFwd < -4) tips.push('整体偏"欠"，方向感偏后');
+  if (recentAcc > 0 && acc > recentAcc+5)
+    tips.push('比最近 10 局平均高 '+(acc-recentAcc).toFixed(1)+'%，保持节奏');
+  if (recentAcc > 0 && acc < recentAcc-8)
+    tips.push('比最近平均低 '+(recentAcc-acc).toFixed(1)+'%，可能是状态问题');
+  if (issues.length === 0 && tips.length === 0)
+    tips.push('表现非常稳定，可以尝试提升难度');
+
+  function label(v){
+    if (v>=90) return 'S 神级';
+    if (v>=80) return 'A 优秀';
+    if (v>=70) return 'B 良好';
+    if (v>=55) return 'C 及格';
+    return 'D 需练习';
+  }
+  function color(v){
+    if (v>=85) return '#4caf50';
+    if (v>=70) return '#4fc3f7';
+    if (v>=55) return '#ffc107';
+    return '#ff5252';
+  }
+  function bar(lb, v, tx){
+    return '<div class="rating-row"><span class="rating-label">'+lb+
+      '</span><div class="rating-bar"><div class="rating-fill" style="width:'+
+      v.toFixed(0)+'%"></div></div><span class="rating-value">'+tx+'</span></div>';
+  }
+
+  $('coachBody').innerHTML =
+    '<div style="margin-bottom:8px">综合评级 <b style="color:'+color(scoreAcc)+
+    ';font-size:16px">'+label(scoreAcc)+'</b></div>'+
+    bar('准度', scoreAcc, acc.toFixed(1)+'%')+
+    bar('稳定', scoreStable, jerk.toFixed(1)+'°')+
+    bar('跟随', scoreBias, (avgFwd>0?'+':'')+avgFwd.toFixed(1)+'px')+
+    bar('状态', scoreConsist, recentAcc>0?'近均 '+recentAcc.toFixed(0)+'%':'新玩家')+
+    (issues.length
+      ? '<div style="margin-top:8px;font-size:11px;color:#ff9800">发现：'+issues.join('；')+'</div>'
+      : '')+
+    (tips.length
+      ? '<ul style="margin-top:6px">'+tips.map(t=>'<li>'+t+'</li>').join('')+'</ul>'
+      : '');
+}
+
+/* ============================================================
+   偏差分析
+============================================================ */
+function renderBiasAnalysis(){
+  const isTrack = S.mode === 'track' || S.mode === 'trackFlick';
+  const box = $('biasBox');
+  if (!isTrack || S.aimTime < 0.5){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+
+  const total = S.aimTime;
+  const pP = (S.hitTime/total)*100;
+  const pO = (S.overshootTime/total)*100;
+  const pU = (S.undershootTime/total)*100;
+
+  $('segPerfect').style.width = pP.toFixed(1)+'%';
+  $('segOver').style.width = pO.toFixed(1)+'%';
+  $('segUnder').style.width = pU.toFixed(1)+'%';
+  $('vPerfect').textContent = pP.toFixed(0)+'%';
+  $('vOver').textContent = pO.toFixed(0)+'%';
+  $('vUnder').textContent = pU.toFixed(0)+'%';
+
+  const avgFwd = S.aimTime>0 ? S.forwardSum/S.aimTime : 0;
+  const avgLat = S.lateralSamples>0 ? S.lateralSum/S.lateralSamples : 0;
+  const jerkDeg = S.jerkSamples>0 ? (S.jerkSum/S.jerkSamples*180/Math.PI) : 0;
+
+  $('vForward').textContent = (avgFwd>0?'+':'')+avgFwd.toFixed(1)+'px';
+  $('vLateral').textContent = avgLat.toFixed(1)+'px';
+  $('vJerk').textContent = jerkDeg.toFixed(1)+'°';
+
+  let hint = '';
+  if (pO > pU+15 && pO > 25)
+    hint = '⚠ 过靶偏多：准星容易跑到目标前面，试着稳一点、慢一点';
+  else if (pU > pO+15 && pU > 25)
+    hint = '⚠ 欠靶偏多：准星跟不上目标，试试提前量';
+  else if (jerkDeg > 35)
+    hint = '⚠ 抖动明显：手指控制不稳，先降低速度';
+  else if (pP > 70 && jerkDeg < 20)
+    hint = '✓ 跟枪非常稳定，可以尝试提升难度';
+  else if (pP > 55)
+    hint = '✓ 表现不错，继续练习减少偏差';
+  else
+    hint = '继续练习，关注过靶/欠靶比例来调整手感';
+  $('biasHint').textContent = hint;
+}
+
+/* ============================================================
+   曲线 & 热力图
+============================================================ */
+function cssVar(n){
+  return getComputedStyle(document.body).getPropertyValue(n).trim();
+}
+function drawCurves(){
+  const cv = $('chartAcc'), c = cv.getContext('2d');
+  const CW = cv.width, CH = cv.height;
+  c.clearRect(0, 0, CW, CH);
+  c.fillStyle = cssVar('--bg') || '#0d0d0d';
+  c.fillRect(0, 0, CW, CH);
+
+  const rec = S.rec;
+  if (rec.length < 8){
+    c.fillStyle = '#3a3a3a';
+    c.font = '18px system-ui,sans-serif';
+    c.textAlign = 'center';
+    c.fillText('数据不足', CW/2, CH/2+6);
+    return;
+  }
+
+  const B = 60, buckets = Array.from({length:B}, ()=>[]);
+  const total = rec[rec.length-1].t || 1;
+  rec.forEach(f=>{
+    if (f.ax<0 || f.d===undefined) return;
+    buckets[Math.min(B-1, Math.floor(f.t/total*B))].push(f.d<=f.dr?1:0);
+  });
+
+  const pad = 12, gw = CW-pad*2, gh = CH-pad*2;
+  c.strokeStyle = 'rgba(128,128,128,.2)';
+  c.lineWidth = 1;
+  for (let i=0;i<=4;i++){
+    const y = pad+gh*i/4;
+    c.beginPath(); c.moveTo(pad,y); c.lineTo(CW-pad,y); c.stroke();
+  }
+
+  const pts = [];
+  for (let i=0;i<B;i++){
+    if (!buckets[i].length) continue;
+    const v = buckets[i].reduce((a,b)=>a+b,0)/buckets[i].length;
+    pts.push([pad+gw*(i+0.5)/B, pad+gh*(1-v)]);
+  }
+  if (pts.length > 1){
+    c.beginPath(); c.moveTo(pts[0][0], pad+gh);
+    pts.forEach(p=>c.lineTo(p[0], p[1]));
+    c.lineTo(pts[pts.length-1][0], pad+gh); c.closePath();
+    const g = c.createLinearGradient(0,pad,0,pad+gh);
+    g.addColorStop(0, '#4fc3f755');
+    g.addColorStop(1, '#4fc3f700');
+    c.fillStyle = g; c.fill();
+
+    c.beginPath(); c.moveTo(pts[0][0], pts[0][1]);
+    pts.forEach(p=>c.lineTo(p[0], p[1]));
+    c.strokeStyle = '#4fc3f7';
+    c.lineWidth = 2.5;
+    c.lineJoin = 'round';
+    c.stroke();
+  }
+}
+
+function drawHeatmap(){
+  const cv = $('heatCanvas'), c = cv.getContext('2d');
+  const CW = cv.width, CH = cv.height;
+  c.clearRect(0, 0, CW, CH);
+  c.fillStyle = '#0d0d0d';
+  c.fillRect(0, 0, CW, CH);
+
+  if (S.hitPoints.length < 5){
+    c.fillStyle = '#3a3a3a';
+    c.font = '18px system-ui,sans-serif';
+    c.textAlign = 'center';
+    c.fillText('命中数据不足', CW/2, CH/2+6);
+    return;
+  }
+
+  const gw = CW-40, gh = CH-40;
+  const grid = 32;
+  const gx = Math.floor(gw/grid), gy = Math.floor(gh/grid);
+  const gridData = Array.from({length:gy}, ()=>new Array(gx).fill(0));
+
+  S.hitPoints.forEach(p=>{
+    const px = clamp((p.x-p.tx)/p.tr, -1, 1);
+    const py = clamp((p.y-p.ty)/p.tr, -1, 1);
+    const ix = Math.floor((px+1)/2*gx);
+    const iy = Math.floor((py+1)/2*gy);
+    if (gridData[iy] && gridData[iy][ix] !== undefined) gridData[iy][ix]++;
+  });
+
+  const maxV = Math.max(1, ...gridData.flat());
+  for (let j=0;j<gy;j++){
+    for (let i=0;i<gx;i++){
+      const v = gridData[j][i];
+      if (v === 0) continue;
+      const t = v/maxV;
+      const x = 20 + i*grid, y = 20 + j*grid;
+      const r = t<0.5 ? Math.floor(76+(255-76)*t*2) : 255;
+      const g2 = t<0.5 ? 175 : Math.floor(175-175*(t-0.5)*2);
+      c.fillStyle = `rgba(${r},${g2},80,${0.25+t*0.6})`;
+      c.fillRect(x, y, grid-1, grid-1);
+    }
+  }
+
+  c.beginPath(); c.arc(CW/2, CH/2, Math.min(gw,gh)/2, 0, Math.PI*2);
+  c.strokeStyle = 'rgba(255,255,255,.25)';
+  c.lineWidth = 1.5;
+  c.stroke();
+  c.beginPath(); c.arc(CW/2, CH/2, Math.min(gw,gh)/4, 0, Math.PI*2);
+  c.stroke();
+  c.beginPath(); c.arc(CW/2, CH/2, 3, 0, Math.PI*2);
+  c.fillStyle = '#fff'; c.fill();
+  c.fillStyle = '#888';
+  c.font = '12px system-ui,sans-serif';
+  c.textAlign = 'center';
+  c.fillText('中心 = 靶心，范围 = 1 个靶半径', CW/2, CH-6);
+  }
+  /* ============================================================
+   历史记录
+============================================================ */
+function saveHistory(){
+  if (S.sessionTime < 0.6) return;
+  const isTrack = S.mode === 'track' || S.mode === 'trackFlick';
+  const metric = isTrack
+    ? (S.aimTime>0 ? S.hitTime/S.aimTime*100 : 0)
+    : (S.shots>0 ? S.hits/S.shots*100 : 0);
+
+  const item = {
+    ts: Date.now(),
+    mode: S.mode,
+    diff: DIFFS[S.diff].name,
+    move: S.moveMode,
+    speed: S.speedMul,
+    acc: +metric.toFixed(1),
+    dist: S.samples>0 ? Math.round(S.distSum/S.samples) : 0,
+    max: Math.round(S.distMax),
+    dur: +S.sessionTime.toFixed(1),
+    streak: +S.bestStreak.toFixed(1),
+    score: Math.round(S.score),
+    over: isTrack && S.aimTime>0 ? +(S.overshootTime/S.aimTime*100).toFixed(1) : 0,
+    under: isTrack && S.aimTime>0 ? +(S.undershootTime/S.aimTime*100).toFixed(1) : 0,
+    jerk: isTrack && S.jerkSamples>0
+      ? +(S.jerkSum/S.jerkSamples*180/Math.PI).toFixed(1) : 0
+  };
+
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(_){}
+  list.unshift(item);
+  if (list.length > 200) list.length = 200;
+  try{ localStorage.setItem(HIST_KEY, JSON.stringify(list)); }catch(_){}
+}
+
+function renderHistory(){
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(_){}
+  drawTrend(list.slice(0, 20).reverse());
+
+  if (list.length){
+    const bestAcc = Math.max(...list.map(x=>x.acc||0));
+    const bestScore = Math.max(...list.map(x=>x.score||0));
+    const totalMin = list.reduce((a,x)=>a+(x.dur||0),0)/60;
+    $('bestAcc').textContent = bestAcc.toFixed(1)+'%';
+    $('bestScore').textContent = bestScore;
+    $('totalMin').textContent = totalMin.toFixed(0);
+  } else {
+    $('bestAcc').textContent = '--';
+    $('bestScore').textContent = '--';
+    $('totalMin').textContent = '0';
+  }
+
+  renderChallenge();
+
+  if (!list.length){
+    $('historyList').innerHTML = '<div class="hist-empty">还没有记录，先练一局吧</div>';
+    return;
+  }
+  const modeName = {track:'跟枪', click:'点击', flick:'甩枪', multi:'多靶', trackFlick:'跟+闪'};
+
+  $('historyList').innerHTML = list.map(it=>{
+    const d = new Date(it.ts);
+    const ds = (d.getMonth()+1)+'/'+d.getDate()+' '+
+      String(d.getHours()).padStart(2,'0')+':'+
+      String(d.getMinutes()).padStart(2,'0');
+    const biasText = (it.over>0 || it.under>0)
+      ? ` · 过${it.over}% 欠${it.under}%` : '';
+    return '<div class="hist-item">'+
+      '<div><div class="hist-acc">'+it.acc+'%</div>'+
+      '<div class="hist-meta">'+(modeName[it.mode]||it.mode)+' · '+it.diff+
+      ' · '+it.speed+'x · '+it.dur+'s'+biasText+'</div></div>'+
+      '<div class="hist-right"><div class="hist-dist">'+it.dist+'px</div>'+
+      '<div class="hist-date">'+ds+'</div></div></div>';
+  }).join('');
+}
+
+function drawTrend(list){
+  const cv = $('chartTrend'), c = cv.getContext('2d');
+  const CW = cv.width, CH = cv.height;
+  c.clearRect(0, 0, CW, CH);
+  c.fillStyle = cssVar('--bg') || '#0d0d0d';
+  c.fillRect(0, 0, CW, CH);
+
+  if (list.length < 2){
+    c.fillStyle = '#3a3a3a';
+    c.font = '16px system-ui,sans-serif';
+    c.textAlign = 'center';
+    c.fillText('至少需要 2 次记录', CW/2, CH/2+5);
+    return;
+  }
+
+  const pad = 14, gw = CW-pad*2, gh = CH-pad*2;
+  c.strokeStyle = 'rgba(128,128,128,.2)';
+  c.lineWidth = 1;
+  for (let i=0;i<=4;i++){
+    const y = pad+gh*i/4;
+    c.beginPath(); c.moveTo(pad, y); c.lineTo(CW-pad, y); c.stroke();
+  }
+
+  const pts = list.map((x, i)=>[
+    pad + gw*(i/(list.length-1||1)),
+    pad + gh*(1-(x.acc||0)/100)
+  ]);
+
+  c.beginPath();
+  c.moveTo(pts[0][0], pad+gh);
+  pts.forEach(p=>c.lineTo(p[0], p[1]));
+  c.lineTo(pts[pts.length-1][0], pad+gh);
+  c.closePath();
+  const g = c.createLinearGradient(0, pad, 0, pad+gh);
+  g.addColorStop(0, '#4fc3f755');
+  g.addColorStop(1, '#4fc3f700');
+  c.fillStyle = g; c.fill();
+
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  pts.forEach(p=>c.lineTo(p[0], p[1]));
+  c.strokeStyle = '#4fc3f7';
+  c.lineWidth = 2.5;
+  c.lineJoin = 'round';
+  c.stroke();
+
+  pts.forEach(p=>{
+    c.beginPath(); c.arc(p[0], p[1], 3, 0, Math.PI*2);
+    c.fillStyle = '#4fc3f7'; c.fill();
+  });
+
+  c.fillStyle = '#4a4a4a';
+  c.font = '12px system-ui,sans-serif';
+  c.textAlign = 'left';
+  c.fillText('100%', pad+3, pad+11);
+  c.fillText('0%', pad+3, CH-pad-3);
+}
+
+/* ============================================================
+   成就
+============================================================ */
+const ACHIEVEMENTS = [
+  {id:'first',    name:'初出茅庐',  desc:'累计训练超过 30 秒',      check:()=>S.sessionTime>30},
+  {id:'acc80',    name:'稳如老狗',  desc:'跟枪准度达到 80%',        check:()=>S.aimTime>0&&S.hitTime/S.aimTime>=0.8},
+  {id:'acc90',    name:'准度大师',  desc:'跟枪准度达到 90%',        check:()=>S.aimTime>0&&S.hitTime/S.aimTime>=0.9},
+  {id:'acc95',    name:'神级准度',  desc:'跟枪准度达到 95%',        check:()=>S.aimTime>0&&S.hitTime/S.aimTime>=0.95},
+  {id:'streak5',  name:'连击 5 秒', desc:'单局最佳连击 ≥ 5 秒',     check:()=>S.bestStreak>=5},
+  {id:'streak10', name:'连击 10 秒',desc:'单局最佳连击 ≥ 10 秒',    check:()=>S.bestStreak>=10},
+  {id:'score2k',  name:'得分 2000', desc:'单局得分 ≥ 2000',         check:()=>S.score>=2000},
+  {id:'hard',     name:'挑战困难',  desc:'困难难度下训练 ≥ 20 秒',  check:()=>S.diff>=2&&S.sessionTime>20},
+  {id:'extreme',  name:'极限战士',  desc:'极限难度下训练 ≥ 15 秒',  check:()=>S.diff===3&&S.sessionTime>15},
+  {id:'noBias',   name:'完美跟枪',  desc:'过靶+欠靶 < 10%',         check:()=>S.aimTime>2&&(S.overshootTime+S.undershootTime)/S.aimTime<0.1},
+  {id:'smooth',   name:'丝滑之手',  desc:'抖动指数 < 10°',          check:()=>S.jerkSamples>50&&(S.jerkSum/S.jerkSamples*180/Math.PI)<10},
+  {id:'aiMaster', name:'AI 猎手',   desc:'AI 躲避模式准度 ≥ 70%',   check:()=>S.moveMode==='ai'&&S.aimTime>3&&S.hitTime/S.aimTime>=0.7}
+];
+
+function checkAchievements(){
+  let store = {};
+  try{ store = JSON.parse(localStorage.getItem(ACHV_KEY)||'{}'); }catch(_){}
+  ACHIEVEMENTS.forEach(a=>{
+    if (store[a.id]) return;
+    if (a.check()){ store[a.id] = true; showAchv(a.name); }
+  });
+  try{ localStorage.setItem(ACHV_KEY, JSON.stringify(store)); }catch(_){}
+}
+
+function showAchv(name){
+  const el = $('achv');
+  el.textContent = '🏆 ' + name;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+function renderAchvList(){
+  let store = {};
+  try{ store = JSON.parse(localStorage.getItem(ACHV_KEY)||'{}'); }catch(_){}
+  $('achvList').innerHTML = ACHIEVEMENTS.map(a=>{
+    const unlocked = !!store[a.id];
+    return `<div class="achv-card ${unlocked?'unlocked':''}">
+      <div class="name">${unlocked?'🏆 ':''}${a.name}</div>
+      <div class="desc">${a.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   打卡 / 每日挑战
+============================================================ */
+function updateStreak(){
+  let st = {days:[], last:null, count:0};
+  try{ st = JSON.parse(localStorage.getItem(STREAK_KEY)||'{}'); }catch(_){}
+  if (!st.days) st.days = [];
+
+  const today = todayKey();
+  if (!st.days.includes(today)) st.days.push(today);
+  st.days = st.days.slice(-30);
+
+  let count = 0;
+  const d = new Date();
+  for (let i=0;i<30;i++){
+    const k = d.toISOString().slice(0,10);
+    if (st.days.includes(k)) count++;
+    else break;
+    d.setDate(d.getDate()-1);
+  }
+  st.count = count; st.last = today;
+  try{ localStorage.setItem(STREAK_KEY, JSON.stringify(st)); }catch(_){}
+  renderStreak();
+}
+
+function renderStreak(){
+  let st = {days:[], count:0};
+  try{ st = JSON.parse(localStorage.getItem(STREAK_KEY)||'{}'); }catch(_){}
+  $('streakDays').textContent = st.count || 0;
+
+  const today = new Date();
+  const week = [];
+  for (let i=6;i>=0;i--){
+    const d = new Date(today);
+    d.setDate(d.getDate()-i);
+    const k = d.toISOString().slice(0,10);
+    week.push({
+      key: k,
+      label: '日一二三四五六'[d.getDay()],
+      done: (st.days||[]).includes(k)
+    });
+  }
+  $('weekDays').innerHTML = week.map(w=>
+    `<div class="day ${w.done?'done':''} ${w.key===todayKey()?'today':''}">${w.label}</div>`
+  ).join('');
+
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(_){}
+  const todayStr = todayKey();
+  const todaySecs = list
+    .filter(x=>new Date(x.ts).toISOString().slice(0,10)===todayStr)
+    .reduce((a,x)=>a+(x.dur||0), 0);
+  $('todayMin').textContent = (todaySecs/60).toFixed(1);
+}
+
+const CHALLENGE_TYPES = [
+  {id:'acc70', desc:'完成一局跟枪，准度 ≥ 70%',
+    check:()=>(S.mode==='track'||S.mode==='trackFlick')&&S.aimTime>0&&S.hitTime/S.aimTime>=0.7},
+  {id:'acc85', desc:'完成一局跟枪，准度 ≥ 85%',
+    check:()=>(S.mode==='track'||S.mode==='trackFlick')&&S.aimTime>0&&S.hitTime/S.aimTime>=0.85},
+  {id:'streak5', desc:'单局最佳连击 ≥ 5 秒',
+    check:()=>S.bestStreak>=5},
+  {id:'score15', desc:'单局得分 ≥ 1500',
+    check:()=>S.score>=1500},
+  {id:'dur60', desc:'完成 ≥ 60 秒的一局训练',
+    check:()=>S.sessionTime>=60},
+  {id:'hard', desc:'在困难或更高难度下完成一局',
+    check:()=>S.diff>=2&&S.sessionTime>=20},
+  {id:'jerk20', desc:'抖动指数 ≤ 20°（跟枪模式）',
+    check:()=>(S.mode==='track'||S.mode==='trackFlick')&&S.jerkSamples>50&&(S.jerkSum/S.jerkSamples*180/Math.PI)<=20},
+  {id:'bias15', desc:'过靶+欠靶时间总和 < 15%（跟枪）',
+    check:()=>(S.mode==='track'||S.mode==='trackFlick')&&S.aimTime>2&&(S.overshootTime+S.undershootTime)/S.aimTime<0.15}
+];
+
+function getTodayChallenge(){
+  const today = todayKey();
+  let st = {};
+  try{ st = JSON.parse(localStorage.getItem(CHALLENGE_KEY)||'{}'); }catch(_){}
+  if (st.date !== today){
+    const seed = parseInt(today.replace(/-/g,''), 10);
+    const idx = seed % CHALLENGE_TYPES.length;
+    st = {date: today, id: CHALLENGE_TYPES[idx].id, done: false, progress: 0};
+    try{ localStorage.setItem(CHALLENGE_KEY, JSON.stringify(st)); }catch(_){}
+  }
+  return st;
+}
+
+function renderChallenge(){
+  const st = getTodayChallenge();
+  const def = CHALLENGE_TYPES.find(x=>x.id===st.id) || CHALLENGE_TYPES[0];
+  $('challengeDesc').textContent = def.desc;
+  $('challengeProgress').style.width = st.done ? '100%' : (st.progress||0)*100+'%';
+  $('challengeStatus').textContent = st.done ? '✅ 已完成' : '未完成';
+}
+
+function updateChallengeProgress(){
+  const st = getTodayChallenge();
+  if (st.done) return;
+  const def = CHALLENGE_TYPES.find(x=>x.id===st.id);
+  if (!def) return;
+  if (def.check()){
+    st.done = true; st.progress = 1;
+    try{ localStorage.setItem(CHALLENGE_KEY, JSON.stringify(st)); }catch(_){}
+    showAchv('完成每日挑战');
+  }
+}
+
+/* ============================================================
+   回放
+============================================================ */
+function startReplay(){
+  if (S.rec.length < 6) return;
+  S.phase = 'replay';
+  S.replayT = 0; S.replayIdx = 0;
+  S.replayEnd = S.rec[S.rec.length-1].t;
+  S.replaySpeed = 1; S.replayPaused = false;
+
+  document.querySelectorAll('.rp-speed').forEach(b=>{
+    b.classList.toggle('active', +b.dataset.s===1);
+  });
+  $('rpPlay').textContent = '暂停';
+  $('resultPanel').classList.remove('show');
+  $('replayBar').classList.add('show');
+  $('hint').classList.add('hide');
+  $('btnStart').textContent = '开始训练';
+  $('btnStart').classList.remove('danger');
+}
+
+function stopReplay(){
+  S.phase = 'result';
+  $('replayBar').classList.remove('show');
+  $('rpFill').style.width = '0%';
+  $('hint').classList.remove('hide');
+  showResult();
+}
+
+function recAt(t){
+  const rec = S.rec;
+  while (S.replayIdx < rec.length-1 && rec[S.replayIdx+1].t <= t) S.replayIdx++;
+  while (S.replayIdx > 0 && rec[S.replayIdx].t > t) S.replayIdx--;
+  return rec[S.replayIdx];
+}
+
+/* ============================================================
+   绘制
+============================================================ */
+function drawGrid(){
+  const step = Math.max(40, Math.min(S.W, S.H)/12);
+  ctx.strokeStyle = cssVar('--line') || '#161616';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x=0; x<=S.W; x+=step){ ctx.moveTo(x, 0); ctx.lineTo(x, S.H); }
+  for (let y=0; y<=S.H; y+=step){ ctx.moveTo(0, y); ctx.lineTo(S.W, y); }
+  ctx.stroke();
+}
+
+function drawTargetShape(x, y, r, glow, biasColor){
+  const g = ctx.createRadialGradient(x, y, r*0.08, x, y, r);
+  g.addColorStop(0, '#ff8a80');
+  g.addColorStop(0.55, '#ff5252');
+  g.addColorStop(1, '#8e1010');
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.beginPath(); ctx.arc(x, y, r*0.55, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1; ctx.stroke();
+
+  ctx.beginPath(); ctx.arc(x, y, Math.max(2, r*0.07), 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+
+  if (glow){
+    ctx.beginPath(); ctx.arc(x, y, r+6, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(76,175,80,0.8)';
+    ctx.lineWidth = 3; ctx.stroke();
+  }
+  if (biasColor){
+    ctx.beginPath(); ctx.arc(x, y, r+12, 0, Math.PI*2);
+    ctx.strokeStyle = biasColor;
+    ctx.lineWidth = 2.5;
+    ctx.globalAlpha = 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawCrosshair(x, y, color){
+  const s = S.crossSize;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x-s, y); ctx.lineTo(x-5, y);
+  ctx.moveTo(x+5, y); ctx.lineTo(x+s, y);
+  ctx.moveTo(x, y-s); ctx.lineTo(x, y-5);
+  ctx.moveTo(x, y+5); ctx.lineTo(x, y+s);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI*2);
+  ctx.fillStyle = color; ctx.fill();
+}
+
+function renderLive(){
+  if (!S.targets.length) return;
+  const a = S.aim;
+
+  if (S.showTrail && S.rec.length > 4){
+    const n = S.rec.length, start = Math.max(0, n-55);
+    for (let ti=0; ti<S.targets.length; ti++){
+      ctx.beginPath();
+      let started = false;
+      for (let i=start; i<n; i++){
+        const f = S.rec[i];
+        if (!f.targets[ti]) continue;
+        if (!started){ ctx.moveTo(f.targets[ti].x, f.targets[ti].y); started = true; }
+        else ctx.lineTo(f.targets[ti].x, f.targets[ti].y);
+      }
+      if (started){
+        ctx.strokeStyle = 'rgba(255,82,82,0.22)';
+        ctx.lineWidth = 2; ctx.stroke();
+      }
+    }
+  }
+
+  const main = S.targets[0];
+  const onTarget = a.active && main
+    && Math.hypot(a.x-main.x, a.y-main.y) <= main.r;
+
+  if (a.active && (S.mode === 'track' || S.mode === 'trackFlick')){
+    S.targets.forEach(t=>{
+      const hit = Math.hypot(a.x-t.x, a.y-t.y) <= t.r;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y); ctx.lineTo(t.x, t.y);
+      ctx.strokeStyle = hit ? 'rgba(76,175,80,0.55)' : 'rgba(255,82,82,0.4)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6,6]); ctx.stroke(); ctx.setLineDash([]);
+    });
+  }
+
+  let biasColor = null;
+  if (S.showBias && a.active && main){
+    const spd = Math.hypot(main.vx, main.vy);
+    if (spd > 1){
+      const nx = main.vx/spd, ny = main.vy/spd;
+      const fwd = (a.x-main.x)*nx + (a.y-main.y)*ny;
+      if (fwd > main.r) biasColor = 'rgba(255,152,0,0.9)';
+      else if (fwd < -main.r) biasColor = 'rgba(33,150,243,0.9)';
+      else biasColor = 'rgba(76,175,80,0.9)';
+    }
+  }
+
+  S.targets.forEach((t, i)=>{
+    const hit = (i===0) ? onTarget : false;
+    drawTargetShape(t.x, t.y, t.r, hit, i===0 ? biasColor : null);
+  });
+
+  if (a.active && (S.mode === 'track' || S.mode === 'trackFlick')){
+    drawCrosshair(a.x, a.y, onTarget ? '#4caf50' : '#ffeb3b');
+  }
+}
+
+function renderReplay(){
+  const rec = S.rec;
+  if (!rec.length) return;
+  const t = S.replayT;
+
+  for (let ti=0; ti<rec[0].targets.length; ti++){
+    ctx.beginPath();
+    let started = false;
+    for (let i=0; i<rec.length; i++){
+      const f = rec[i];
+      if (!f.targets[ti]) continue;
+      if (!started){ ctx.moveTo(f.targets[ti].x, f.targets[ti].y); started = true; }
+      else ctx.lineTo(f.targets[ti].x, f.targets[ti].y);
+    }
+    if (started){
+      ctx.strokeStyle = 'rgba(255,82,82,0.28)';
+      ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+
+  ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+  for (let i=1; i<rec.length; i++){
+    const p0 = rec[i-1], p1 = rec[i];
+    if (p1.t > t) break;
+    if (p1.ax < 0 || p0.ax < 0) continue;
+    ctx.beginPath();
+    ctx.moveTo(p0.ax, p0.ay);
+    ctx.lineTo(p1.ax, p1.ay);
+    const hit = (p1.d !== undefined && p1.d <= p1.dr);
+    ctx.strokeStyle = hit ? 'rgba(76,175,80,0.8)' : 'rgba(255,235,59,0.4)';
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+
+  const cur = recAt(t);
+  if (!cur) return;
+
+  cur.targets.forEach((tt, i)=>{
+    const hit = cur.ax >= 0 && cur.d !== undefined && cur.d <= cur.dr && i===0;
+    drawTargetShape(tt.x, tt.y, tt.r, hit, null);
+  });
+
+  if (cur.ax >= 0){
+    const hit = cur.d !== undefined && cur.d <= cur.dr;
+    ctx.beginPath();
+    ctx.moveTo(cur.ax, cur.ay);
+    ctx.lineTo(cur.targets[0].x, cur.targets[0].y);
+    ctx.strokeStyle = hit ? 'rgba(76,175,80,0.6)' : 'rgba(255,82,82,0.45)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,6]); ctx.stroke(); ctx.setLineDash([]);
+    drawCrosshair(cur.ax, cur.ay, hit ? '#4caf50' : '#ffeb3b');
+  }
+
+  $('rpFill').style.width = (S.replayEnd>0 ? (t/S.replayEnd*100) : 0) + '%';
+  $('rpTime').textContent = t.toFixed(1) + 's';
+}
+
+function render(){
+  ctx.clearRect(0, 0, S.W, S.H);
+  drawGrid();
+  if (S.phase === 'replay') renderReplay();
+  else if (S.phase !== 'idle') renderLive();
+}
+
+/* ============================================================
+   主循环
+============================================================ */
+function loop(ts){
+  if (!S.lastTs) S.lastTs = ts;
+  let dt = (ts - S.lastTs) / 1000;
+  S.lastTs = ts;
+  if (dt > 0.05) dt = 0.05;
+  if (dt < 0) dt = 0;
+
+  if (S.phase === 'running'){
+    S.sessionTime += dt;
+    updateTargets(dt);
+    updateStats(dt);
+    recordFrame();
+    updateHUD();
+  } else if (S.phase === 'replay' && !S.replayPaused){
+    S.replayT += dt * S.replaySpeed;
+    if (S.replayT >= S.replayEnd){
+      S.replayT = S.replayEnd;
+      render();
+      stopReplay();
+      requestAnimationFrame(loop);
+      return;
+    }
+  }
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   跟枪统计
+============================================================ */
+function updateStats(dt){
+  if (S.mode !== 'track' && S.mode !== 'trackFlick') return;
+  const a = S.aim, t = S.targets[0];
+  if (!a.active || !t) return;
+
+  const d = Math.hypot(a.x-t.x, a.y-t.y);
+  S.aimTime += dt;
+  S.distSum += d;
+  S.samples++;
+  if (d > S.distMax) S.distMax = d;
+
+  const inTarget = d <= t.r;
+  if (inTarget){
+    S.hitTime += dt;
+    S.streak += dt;
+    if (S.streak > S.bestStreak) S.bestStreak = S.streak;
+    if (S.streak > 2) showCombo(S.streak.toFixed(1));
+  } else {
+    if (S.streak > 1) beep(300, 0.08, 0.05, 'sawtooth');
+    S.streak = 0;
+  }
+
+  const spd = Math.hypot(t.vx, t.vy);
+  if (spd > 1){
+    const nx = t.vx/spd, ny = t.vy/spd;
+    const fwd = (a.x-t.x)*nx + (a.y-t.y)*ny;
+    const lat = -(a.x-t.x)*ny + (a.y-t.y)*nx;
+    S.forwardSum += fwd*dt;
+    S.lateralSum += Math.abs(lat)*dt;
+    S.lateralSamples++;
+    if (!inTarget){
+      if (fwd > 0) S.overshootTime += dt;
+      else S.undershootTime += dt;
+    }
+  }
+
+  if (S.lastAim){
+    const avx = a.x - S.lastAim.x, avy = a.y - S.lastAim.y;
+    const amag = Math.hypot(avx, avy);
+    if (amag > 0.5){
+      const curDir = {x: avx/amag, y: avy/amag};
+      if (S.lastAimDir){
+        const dot = clamp(curDir.x*S.lastAimDir.x + curDir.y*S.lastAimDir.y, -1, 1);
+        S.jerkSum += Math.acos(dot);
+        S.jerkSamples++;
+      }
+      S.lastAimDir = curDir;
+    }
+  }
+  S.lastAim = {x: a.x, y: a.y};
+
+  if (inTarget && S.recTick % 4 === 0){
+    S.hitPoints.push({x: a.x, y: a.y, tx: t.x, ty: t.y, tr: t.r});
+    if (S.hitPoints.length > 2000) S.hitPoints.shift();
+  }
+}
+
+function showCombo(v){
+  const el = $('combo');
+  el.textContent = v + 'x';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 500);
+}
+
+/* ============================================================
+   输入
+============================================================ */
+function pos(e){
+  const r = canvas.getBoundingClientRect();
+  return {x: e.clientX - r.left, y: e.clientY - r.top};
+}
+
+canvas.addEventListener('pointerdown', function(e){
+  if (S.phase !== 'running') return;
+  e.preventDefault();
+  const p = pos(e);
+  if (S.mode === 'track' || S.mode === 'trackFlick'){
+    S.aim.x = p.x; S.aim.y = p.y;
+    S.aim.active = true;
+    S.lastAim = null; S.lastAimDir = null;
+    try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
+  } else {
+    handleShot(p.x, p.y);
+  }
+}, {passive:false});
+
+canvas.addEventListener('pointermove', function(e){
+  if (S.phase !== 'running') return;
+  if ((S.mode !== 'track' && S.mode !== 'trackFlick') || !S.aim.active) return;
+  e.preventDefault();
+  const p = pos(e);
+  S.aim.x = p.x; S.aim.y = p.y;
+}, {passive:false});
+
+function endAim(){ S.aim.active = false; }
+canvas.addEventListener('pointerup', endAim);
+canvas.addEventListener('pointercancel', endAim);
+window.addEventListener('pointerup', endAim);
+window.addEventListener('blur', function(){
+  endAim();
+  if (S.phase === 'running') endTraining();
+});
+canvas.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
+document.addEventListener('gesturestart', e=>e.preventDefault());
+
+function handleShot(x, y){
+  S.shots++;
+  let hitIdx = -1, bestDist = Infinity;
+  for (let i=0; i<S.targets.length; i++){
+    const t = S.targets[i];
+    const d = Math.hypot(x-t.x, y-t.y);
+    if (d <= t.r && d < bestDist){ bestDist = d; hitIdx = i; }
+  }
+  if (hitIdx >= 0){
+    S.hits++;
+    beep(1200, 0.06, 0.1, 'sine');
+    vibrate(15);
+    respawnTarget(S.targets[hitIdx]);
+  } else {
+    S.misses++;
+    beep(220, 0.08, 0.06, 'sawtooth');
+    vibrate(30);
+  }
+  S.rec.push({
+    t: S.sessionTime,
+    targets: S.targets.map(t=>({x:t.x, y:t.y, r:t.r})),
+    ax: x, ay: y,
+    d: bestDist === Infinity ? 9999 : bestDist,
+    dr: hitIdx >= 0 ? S.targets[hitIdx].r : 0
+  });
+  updateHUD();
+}
+
+/* ============================================================
+   导入导出
+============================================================ */
+function exportHistory(){
+let list=[]；
+尝试{list=JSON.Parse(localStorage.getitem(HIST_KEY)||'[]')；}捕获(_){}
+常量blob=新Blob([JSON.stringify(list，null，2)]，{type：'application/json'})；
+常量url=URL.createObjectURL(blob)；
+Const a=document.createElement('a')；
+a.href=url；
+a.download='aim-history-'+Date.now()+'.json'；
+a.click()；
+setTimeout(()=>URL.revokeObjectURL(url)，1000)；
+}
+
+函数importHistory(文件){
+Const reader=新建FileReader()；
+reader.onload=e=>{
+尝试{
+Const data=JSON.parse(e.target.result)；
+if(！Array.isArray(data))抛出新错误('格式错误')；
+设现有=[]；
+尝试{existing=JSON.Parse(localStorage.getitem(HIST_KEY)||'[]')；}捕获(_){}
+const merged=existing.concat(data).slice(0，200)；
+localStorage.setItem(HIST_KEY，JSON.stringify(合并))；
+renderHistory()；
+alert('导入成功，共'+data.length+'条记录')；
+}catch(err){alert('导入失败：'+err.message)；}
+  };
+reader.readAsText(文件)；
+}
+
+/*============================================================
+   事件绑定
+============================================================*/
+$('btnSettings').addEventListener('click'，()=>$('settings').classList.toggle('open'))；
+
+$('modeChips').addEventListener('click'，e=>{
+const b=e.target.closest('.chip')；if(！b)return；
+S.mode=b.dataset.v；
+文件。querySelectorAll('#modeChips.芯片')。foreach(x=>x.classList.切换('active'，X===b))；
+$('hint').textContent=MODE_HINTS[S.mode]；
+SaveSettings()；resetAll()；
+});
+
+$('diffChips').addEventListener('click'，e=>{
+const b=e.target.closest('.chip')；if(！b)return；
+S.diff=+b.dataset.v；
+文件。querySelectorAll('#diffChips.芯片')。foreach(x=>x.classList.切换('active'，X===b))；
+SaveSettings()；
+s.targets.forEach(clampTarget)；
+if(S.phase！=='running')resetTargets()；
+});
+
+$('moveChips').addEventListener('click'，e=>{
+const b=e.target.closest('.chip')；if(！b)return；
+S.moveMode=b.dataset.v；
+文件。querySelectorAll('#moveChips.芯片')。foreach(x=>x.classList.切换('active'，X===b))；
+SaveSettings()；
+S.targets.forEach(t=>{t.flickerTimer=0；t.aiTimer=0；})；
+});
+
+$('themeChips').addEventListener('click'，e=>{
+const b=e.target.closest('.chip')；if(！b)return；
+s.theme=b.dataset.v；
+document.body.dataset.theme=S.theme；
+文件。querySelectorAll('#themeChips.芯片')。foreach(x=>x.classList.toggle('active'，X===b))；
+SaveSettings()；
+});
+
+$('sSpeed').addEventListener('input'，e=>{
+S.speedMul=parseFloat(e.target.value)；
+$('vSpeed').textContent=S.speedMul.toFixed(1)+'x'；
+SaveSettings()；
+});
+$('ssize').addEventListener('input'，e=>{
+S.sizeMul=parseFloat(e.target.value)；
+$('vSize')。textContent=S.SizeMul.toFixed(1)+'x'；
+s。目标。foreach(夹钳目标)；保存设置()；
+});
+$('scross').addEventListener('input'，e=>{
+S.crossSize=parseInt(e.target.value)；
+$('vCross').textContent=S.crossSize；
+SaveSettings()；
+});
+$('sSound').addEventListener('change'，e=>{S.sound=e.target.checked；SaveSettings()；})；
+$('sVib').addEventListener('change'，e=>{S.vibrate=e.target.checked；SaveSettings()；})；
+$('sTRAIL').addEventListener('change'，e=>{S.showTrail=e.target.checked；SaveSettings()；})；
+$('sbias').addEventListener('change'，e=>{S.showBias=e.target.checked；SaveSettings()；})；
+
+$('btnStart').addEventListener('click'，()=>{
+if(S.phase==='running')endTraining()；
+否则startTraining()；
+});
+$('btnReset').addEventListener('click'，resetAll)；
+
+$('btnHistory')。addEventListener('click'，()=>{
+renderHistory()；
+$('historyPanel').classList.add('show')；
+});
+$
+$
+</
+尝试
+宽度
+'活动’，X===b)；('
+宽度.addEventListener('orientationchange'，()=>setTimeout(resize，250))；。addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；。addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimsetTim.addEventListener('orientationchange'，()=>setTimeout(resize，250))；。addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；。addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>setTimeout(resize，250))；.addEventListener('orientationchange'，()=>resize，250
+localStorage
+$
+renderHistory()；()；()；()；()；()；()；()；()；()；()；()；()；()；()；()；
+如果(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；(f)输入历史(f)；
+e
+});
+
+卢比重播Idx
+renderAchvList()；()；()；()；()；()；()；()；()；()；()；()；()；()；()；()；
+$
+Rs
+$('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')('achvClose')('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；'achvClose')('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；('achvClose')。addEventListener('click'，()=>$('acvPanel').classList.remove('show'))；
+
+$('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，star('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；('btnReplay').addEventListener('click'，startReplay)；
+$('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult').AddEventListener('click'，()=>{('btnCloseResult').AddEventListener('click'，()=>{('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult').AddEventListener('click'，()=>{('btnCloseResult').AddEventListener('click'，()=>{('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult').Ad.AddEventListener('click'，()=>{('btnCloseResult').AddEventListener('click'，()=>{('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult')。addEventListener('click'，()=>{('btnCloseResult').AddEventListener('click'，()=>{('btnCloseResult').AddEventListener('click'，()=>{
+$('resultPanel').classList.remove('show')；('resultPanel')。classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel')。classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel')。classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel').classList.remove('show')；('resultPanel')。classList.remove('show')；('resultPanel')。classList.remove('show')；('resultPanel')。classList.remove('show')；
+resetAll()；()；()；()；()；()；()；()；()；()；()；()；()；()；()；()；
+});
+
+$('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('cl('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；('rpExit').addEventListener('click'，stopReplay)；
+$('rpPlay').AddEventListener('click'，()=>{('rpPlay')。addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{('rpPlay').AddEventListener('click'，()=>{('rpPlay')。addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{('rpPlay').AddEventListener('click'，()=>{('rpPlay')。addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{('rpPlay').AddEvent.AddEventListener('click'，()=>{('rpPlay')。addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{('rpPlay').addEventListener('click'，()=>{
+S。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；。replayPaused=！S。replayPaused；
+$('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayreplayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；('rpPlay').textContent=S.replayPaused？'继续'：'暂停'；
+});
+replayPaused.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{.q.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-速度').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{.querySelectorAll('.rp-speed').foreach(b=>{
+b。addEventListener('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{。addEventListener('click'，()=>{
+S.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=parseFloat(b.数据集。s)；.replaySpeed=par=parseFloat(b.数据集。s)；
+文件。querySelectorAll('.rp-速度')。foreach(x=>x.'活动’，X===b)；('.rp-速度')。foreach(x=>x.'active'，X====b)；('.rp-速度').foreach(x=>x.'活动’，X===b)；('.rp-速度').foreach(x=>x.'active'，X====b)；('.rp-速度').foreach(x=>x.'活动’，X===b)；('.rp-速度')。foreach(x=>x.'active'，X====b)；('.rp-速度').foreach(x=>x.'活动’，X===b)；('.rp-速度').forEach(x=>x.'active'，X===b)；('.rp-速度')。foreach(x=>x.'活动’，X===b)；('.rp-速度')。foreach(x=>x.'active'，X====b)；('.rp-速度').foreach(x=>x.'活动’，X===b)；('.rp-速度').foreach(x=>x.'active'，X====b)；('.rp-速度').foreach(x=>x.'活动’，X===b)；('.rp-速度')。foreach(x=>x.'active'，X====b)；('.rp-速度').foreach(x=>x.'活动’，X===b)；('.rp-速度').foreach(x=>x.'active'，X===b)；
+  });
+});
+$.addEventListener('rpProgress').AddEventListener('click'，e=>{('rpProgress')。addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{('rpProgress').AddEventListener('click'，e=>{('rpProgress')。addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{('rpProgress').AddEventListener('click'，e=>{('rpProgress')。addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{('rpProgress').addEventListenerener('click'，e=>{('rpProgress').AddEventListener('click'，e=>{('rpProgress')。addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{'click'，e=>{('rpProgress').AddEventListener('click'，e=>{('rpProgress')。addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{('rpProgress').addEventListener('click'，e=>{
+Const r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClientRect()； r=e.currentTarget.getBoundingClie(，res
+const p=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.clientX-r.left)/r.宽度；P=(e.client
+脚本S.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；。replayT=clamp(p，0，1)*S。replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；。replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.；.replayT=clamp(p，0，1)*S.replayEnd；.replayT=clamp(p，0，1)*S.replayEnd；
+卢比重播Idx=0；.playIdx=0；.playIdx=0；.playIdx=0；=0；.playIdx=0；.playIdx=0；.playIdx=0；=0；.playIdx=0；.playIdx=0；.playIdx=0；=0；.playIdx=0；.playIdx=0；.playIdx=0；=0；.playIdx=0；.playIdx=0；.playIdx=0；=0；.playIdx=0；.playIdx=0；.playIdx=0；=0；.playIdx=0；.playIdx=0；.playIdx=0；=0；.playIdx=0；.playIdx=0；.playIdx=0；
+左();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();();
+}););
+
+r.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('re.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListenersize''re.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListener('resize'，resize)；.addEventListenersize'，resize)；.addEventListener('resize'，resize)；'resize'，resize)；.addEventListener('resize'，resize)；ize)；.addEventListener('resize'，resize)；'resize'，resize)；.addEventListener('resize'，resize)；
+宽度
+
+'调整大小'
+============================================================*/
+============================================================*/
+loadSettings
+applySettingsToUI
+调整大小
+resetTargets
+调整大小
+renderStreak
+renderChallenge
+requestAnimationFrame
+
+})();)();)();)();)();)();)();)();)();)();)();)();)();)();)();)();
+</
+</
+</
